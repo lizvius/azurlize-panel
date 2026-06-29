@@ -187,7 +187,7 @@ export const DailyData = ({ authUser }) => {
             fetchData(); 
             
             if (modalMode === 'add') {
-                showToastMessage('success', `Data @${formData.username} berhasil disimpan!`);
+                showToastMessage('success', `Data ${formData.username} berhasil disimpan!`);
                 setFormData(prev => ({
                     ...prev,
                     username: '',
@@ -450,7 +450,7 @@ export const DailyData = ({ authUser }) => {
                                         <div className="flex items-center gap-3">
                                             <div className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 text-sm shrink-0"><i className="ph-fill ph-user"></i></div>
                                             <div>
-                                                <div className="font-bold text-sm text-gray-900 dark:text-white leading-tight">@{d?.username || '-'}</div>
+                                                <div className="font-bold text-sm text-gray-900 dark:text-white leading-tight">{d?.username || '-'}</div>
                                                 <div className="text-[10px] text-gray-500 font-mono mt-0.5">UID {d?.uid || '-'}</div>
                                             </div>
                                         </div>
@@ -508,7 +508,7 @@ export const DailyData = ({ authUser }) => {
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 shrink-0"><i className="ph-fill ph-user"></i></div>
                                                         <div>
-                                                            <div className="font-bold text-xs text-gray-900 dark:text-white mb-0.5">@{d?.username || '-'}</div>
+                                                            <div className="font-bold text-xs text-gray-900 dark:text-white mb-0.5">{d?.username || '-'}</div>
                                                             <div className="text-[10px] text-gray-500 font-mono">UID: {d?.uid || '-'} • <i className="ph-bold ph-calendar-blank"></i> {formatToDDMMYYYY(d?.tanggal)}</div>
                                                         </div>
                                                     </div>
