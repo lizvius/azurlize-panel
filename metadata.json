@@ -1,0 +1,6 @@
+{
+  "name": "AzurLize Recruitment Platform",
+  "description": "Platform management rekrutmen and slip gaji digital secara real-time untuk TeamAzurLize.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
