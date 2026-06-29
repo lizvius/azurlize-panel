@@ -13,7 +13,7 @@ export const DailyData = ({ authUser }) => {
 
     const [data, setData] = useState([]);
     const [users, setUsers] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false); 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState(null); // STATE BARU: Custom Modal Hapus
@@ -116,7 +116,7 @@ export const DailyData = ({ authUser }) => {
         setTimeout(() => setToast(null), 3000);
     };
 
-    const fetchData = async (showLoading = true) => {
+    const fetchData = async (showLoading = false) => {
         if (showLoading) setIsLoading(true);
         try {
             const resUsers = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getUsers' }) });
@@ -134,7 +134,7 @@ export const DailyData = ({ authUser }) => {
     };
 
     useEffect(() => { 
-        fetchData(true); 
+        fetchData(false); 
         
         const handleSync = () => {
             fetchData(false);

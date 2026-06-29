@@ -5,13 +5,13 @@ import { SCRIPT_URL, formatToDDMMYYYY, hasEditAccess } from '../utils';
 export const RecruitmentGoals = ({ authUser }) => {
     const [data, setData] = useState([]);
     const [users, setUsers] = useState([]); 
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     
     const isPrivileged = authUser && hasEditAccess('goals', authUser.role);
 
     useEffect(() => {
         let isMounted = true;
-        const fetchData = async (showLoading = true) => {
+        const fetchData = async (showLoading = false) => {
             if (showLoading) setIsLoading(true);
             try {
                 const res = await fetch(SCRIPT_URL, { 
@@ -40,7 +40,7 @@ export const RecruitmentGoals = ({ authUser }) => {
             }
         };
         
-        fetchData(true);
+        fetchData(false);
         
         const handleSync = () => {
             fetchData(false);

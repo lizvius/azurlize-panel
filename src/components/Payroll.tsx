@@ -6,7 +6,7 @@ export const Payroll = ({ authUser }) => {
     const [data, setData] = useState([]);
     const [users, setUsers] = useState([]);
     const [dailyData, setDailyData] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterPeriod, setFilterPeriod] = useState('');
     
@@ -24,7 +24,7 @@ export const Payroll = ({ authUser }) => {
 
     useEffect(() => {
         let isMounted = true;
-        const fetchData = async (showLoading = true) => {
+        const fetchData = async (showLoading = false) => {
             if (showLoading) setIsLoading(true);
             try {
                 // 1. Fetch Users
@@ -60,7 +60,7 @@ export const Payroll = ({ authUser }) => {
             } catch (error) {} finally { if (showLoading && isMounted) setIsLoading(false); }
         };
         
-        fetchData(true);
+        fetchData(false);
         
         const handleSync = () => {
             fetchData(false);

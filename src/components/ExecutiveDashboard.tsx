@@ -5,7 +5,7 @@ import { SCRIPT_URL, formatToDDMMYYYY } from '../utils';
 export const ExecutiveDashboard = ({authUser}) => {
     const [stats, setStats] = useState({ total: 0, pending: 0, active: 0, failed: 0, recruiters: 0, thisWeek: 0 });
     const [alerts, setAlerts] = useState({ highRisk: 0, mediumRisk: 0 });
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
 
     const isPrivileged = authUser && ['Superadmin', 'Admin'].includes(authUser.role);
 
@@ -14,56 +14,72 @@ export const ExecutiveDashboard = ({authUser}) => {
 
     useEffect(() => {
         let isMounted = true;
-        const fetchDashboardStats = async (showLoading = true) => {
+        const fetchDashboardStats = async (showLoading = false) => {
             if (showLoading) setIsLoading(true);
             try {
                 const resUsers = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getUsers' }) });
                 const dataUsers = await resUsers.json();
-                let activeRecruiters = 0; if (dataUsers.status === 'success') { const safeUsers = Array.isArray(dataUsers.data) ? dataUsers.data : []; activeRecruiters = safeUsers.filter(u => u.role === 'Staff' && (u.status === 'Aktif' || u.status === 'Online')).length; }
+                let activeRecruiters = 0; 
+                if (dataUsers && dataUsers.status === 'success') { 
+                    const safeUsers = Array.isArray(dataUsers.data) ? dataUsers.data : []; 
+                    activeRecruiters = safeUsers.filter(u => u.role === 'Staff' && (u.status === 'Aktif' || u.status === 'Online')).length; 
+                }
 
                 const resData = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getDailyData', role: authUser ? authUser.role : null, username: authUser ? authUser.username : null, name: authUser ? authUser.name : null }) });
                 const resultData = await resData.json();
 
-                if (resultData.status === 'success' && isMounted) {
+                if (resultData && resultData.status === 'success' && isMounted) {
                     let filteredData = Array.isArray(resultData.data) ? resultData.data : [];
                     
-                    if (!isPrivileged) {
+                    if (!isPrivileged && authUser) {
                         filteredData = filteredData.filter(d => d.recruiter === authUser.username || d.recruiter === authUser.name);
                     }
 
-                    const thisWeekMonday = getOffsetMondayStr(0); const today = new Date(); today.setHours(0,0,0,0);
+                    const thisWeekMonday = getOffsetMondayStr(0); 
+                    const today = new Date(); 
+                    today.setHours(0,0,0,0);
                     let sTotal = filteredData.length, sPending = 0, sActive = 0, sFailed = 0, sThisWeek = 0, aHighRisk = 0, aMediumRisk = 0; 
 
                     filteredData.forEach(d => {
-                        if (d.results === 'Pending') sPending++; if (d.results === 'Acc') sActive++; if (d.results === 'Reject') sFailed++;
+                        if (d.results === 'Pending') sPending++; 
+                        if (d.results === 'Acc') sActive++; 
+                        if (d.results === 'Reject') sFailed++;
                         if (getMondayStr(d.tanggal) === thisWeekMonday) sThisWeek++;
                         if (d.results === 'Pending' && d.tanggal) {
                             const inputDate = new Date(d.tanggal);
                             if (!isNaN(inputDate.getTime())) {
-                                inputDate.setHours(0,0,0,0); const diffDays = Math.ceil(Math.abs(today.getTime() - inputDate.getTime()) / (1000 * 60 * 60 * 24));
+                                inputDate.setHours(0,0,0,0); 
+                                const diffDays = Math.ceil(Math.abs(today.getTime() - inputDate.getTime()) / (1000 * 60 * 60 * 24));
                                 if (diffDays > 7) aHighRisk++; else if (diffDays > 3) aMediumRisk++;
                             }
                         }
                     });
                     setStats({ total: sTotal, pending: sPending, active: sActive, failed: sFailed, recruiters: activeRecruiters, thisWeek: sThisWeek });
                     setAlerts({ highRisk: aHighRisk, mediumRisk: aMediumRisk });
+                } else if (resultData && resultData.status !== 'success') {
+                    console.warn("API returned non-success status for dashboard stats:", resultData);
                 }
-            } catch (error) {} finally { if (showLoading && isMounted) setIsLoading(false); }
+            } catch (error) {
+                console.error("Error fetching dashboard stats:", error);
+            } finally { 
+                if (isMounted) {
+                    setIsLoading(false); 
+                }
+            }
         };
         
-        if (authUser) {
-            fetchDashboardStats(true);
-            
-            const handleSync = () => {
-                fetchDashboardStats(false);
-            };
-            window.addEventListener('refreshActiveTab', handleSync);
-            
-            return () => {
-                isMounted = false;
-                window.removeEventListener('refreshActiveTab', handleSync);
-            };
-        }
+        fetchDashboardStats(false);
+        
+        const handleSync = () => {
+            fetchDashboardStats(false);
+        };
+        
+        window.addEventListener('refreshActiveTab', handleSync);
+        
+        return () => {
+            isMounted = false;
+            window.removeEventListener('refreshActiveTab', handleSync);
+        };
     }, [authUser, isPrivileged]);
 
     const funnelDihubungi = stats.total, funnelWawancara = stats.active + stats.failed, funnelDiterima = stats.active;

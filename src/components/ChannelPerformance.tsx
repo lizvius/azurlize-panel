@@ -5,14 +5,14 @@ import { SCRIPT_URL, formatToDDMMYYYY, hasEditAccess } from '../utils';
 export const ChannelPerformance = ({ authUser }) => {
     const [data, setData] = useState([]);
     const [users, setUsers] = useState([]); 
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('Instagram');
 
     const isPrivileged = authUser && hasEditAccess('channels', authUser.role);
 
     useEffect(() => {
         let isMounted = true;
-        const fetchData = async (showLoading = true) => {
+        const fetchData = async (showLoading = false) => {
             if (showLoading) setIsLoading(true);
             try {
                 const res = await fetch(SCRIPT_URL, { 
@@ -37,7 +37,7 @@ export const ChannelPerformance = ({ authUser }) => {
             } catch (error) {} finally { if (showLoading && isMounted) setIsLoading(false); }
         };
         
-        fetchData(true);
+        fetchData(false);
         
         const handleSync = () => {
             fetchData(false);

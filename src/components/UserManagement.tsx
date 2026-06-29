@@ -4,7 +4,7 @@ import { SCRIPT_URL, formatToDDMMYYYY, hasEditAccess } from '../utils';
 
 export const UserManagement = ({ authUser }) => {
     const [users, setUsers] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState('add');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +24,7 @@ export const UserManagement = ({ authUser }) => {
     const isSuperadmin = authUser && authUser.role === 'Superadmin';
     const isPrivileged = authUser && hasEditAccess('users', authUser.role);
 
-    const fetchUsers = async (showLoading = true) => {
+    const fetchUsers = async (showLoading = false) => {
         if (showLoading) setIsLoading(true);
         try {
             const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getUsers' }) });
@@ -34,7 +34,7 @@ export const UserManagement = ({ authUser }) => {
     };
 
     useEffect(() => { 
-        fetchUsers(true); 
+        fetchUsers(false); 
         
         const handleSync = () => {
             fetchUsers(false);

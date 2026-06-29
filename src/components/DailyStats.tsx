@@ -9,7 +9,7 @@ export const DailyStats = ({ authUser }) => {
     const [users, setUsers] = useState([]);
     const [dailyCandidates, setDailyCandidates] = useState([]);
     const [perfData, setPerfData] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     
     const [activeTab, setActiveTab] = useState('input');
     const [harianDate, setHarianDate] = useState(() => {
@@ -49,7 +49,7 @@ export const DailyStats = ({ authUser }) => {
     // -------------------------------------------------------------
     // DATA FETCHING
     // -------------------------------------------------------------
-    const fetchData = async (showLoading = true) => {
+    const fetchData = async (showLoading = false) => {
         if (showLoading) setIsLoading(true);
         try {
             const resUsers = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getUsers' }) });
@@ -77,7 +77,7 @@ export const DailyStats = ({ authUser }) => {
     };
 
     useEffect(() => { 
-        fetchData(true); 
+        fetchData(false); 
         
         const handleSync = () => {
             fetchData(false);
