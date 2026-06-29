@@ -26,6 +26,101 @@ export const AnnouncementCenter = ({authUser}) => {
         catch (e) { return []; }
     });
 
+    const [previewBanner, setPreviewBanner] = useState('');
+
+    useEffect(() => {
+        if (activeChannel === 'general' || !newContent.trim()) {
+            setPreviewBanner('');
+            return;
+        }
+
+        const timeoutId = setTimeout(() => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 800;
+            canvas.height = 250;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                // Background Gradient
+                const gradient = ctx.createLinearGradient(0, 0, 800, 250);
+                const channel = ANNOUNCEMENT_CHANNELS.find(c => c.id === activeChannel) || ANNOUNCEMENT_CHANNELS[1];
+                let colors = ['#4f46e5', '#7c3aed']; // default indigo
+                if (channel.id === 'rules') colors = ['#e11d48', '#be123c'];
+                else if (channel.id === 'bonus') colors = ['#fbbf24', '#f59e0b'];
+                else if (channel.id === 'event') colors = ['#34d399', '#059669'];
+                else if (channel.id === 'general') colors = ['#3b82f6', '#1d4ed8'];
+                
+                gradient.addColorStop(0, colors[0]);
+                gradient.addColorStop(1, colors[1]);
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 800, 250);
+
+                // Abstract elegant background visual accents
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.beginPath(); ctx.arc(120, 220, 160, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+                ctx.beginPath(); ctx.arc(680, 40, 180, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+                ctx.beginPath(); ctx.arc(420, 160, 90, 0, Math.PI * 2); ctx.fill();
+
+                // Channel Badge Tag in Banner
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+                const tagText = `📢  ${channel.name.toUpperCase()}`;
+                
+                ctx.beginPath();
+                const tagWidth = ctx.measureText(tagText).width + 30;
+                if (ctx.roundRect) {
+                    ctx.roundRect(40, 35, tagWidth, 28, 6);
+                } else {
+                    ctx.fillRect(40, 35, tagWidth, 28);
+                }
+                ctx.fill();
+
+                ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(tagText, 55, 52);
+
+                // Render elegant multi-line body text onto the banner
+                ctx.fillStyle = '#ffffff';
+                const cleanText = newContent.trim();
+                ctx.font = 'bold 26px system-ui, -apple-system, sans-serif';
+
+                const words = cleanText.split(/\s+/);
+                let line = '';
+                const lines = [];
+                const maxWidth = 720;
+                const lineHeight = 36;
+
+                for (let n = 0; n < words.length; n++) {
+                    let testLine = line + words[n] + ' ';
+                    let metrics = ctx.measureText(testLine);
+                    let testWidth = metrics.width;
+                    if (testWidth > maxWidth && n > 0) {
+                        lines.push(line);
+                        line = words[n] + ' ';
+                    } else {
+                        line = testLine;
+                    }
+                }
+                lines.push(line);
+
+                const startY = 115;
+                for (let i = 0; i < Math.min(lines.length, 3); i++) {
+                    ctx.fillText(lines[i], 40, startY + (i * lineHeight));
+                }
+
+                // Small modern branding bottom-right
+                ctx.font = 'italic 11px system-ui, -apple-system, sans-serif';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fillText('AzurLize Hub', 680, 215);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                setPreviewBanner(dataUrl);
+            }
+        }, 150);
+
+        return () => clearTimeout(timeoutId);
+    }, [newContent, activeChannel]);
+
     const canPost = (channelId) => channelId === 'general' || ['Superadmin', 'Admin'].includes(authUser.role);
     const canPin = () => ['Superadmin', 'Admin'].includes(authUser.role);
     const canEdit = (p) => authUser.role === 'Superadmin' || (authUser.role === 'Admin' && p.author === authUser.name) || (authUser.role === 'Staff' && p.author === authUser.name);
@@ -116,8 +211,22 @@ export const AnnouncementCenter = ({authUser}) => {
     const handlePost = async (e) => {
         e.preventDefault(); if (!newContent.trim()) return;
         const tempId = Date.now();
-        const newPost = { id: tempId, channelId: activeChannel, author: authUser.name, role: authUser.role, content: newContent, timestamp: new Date().toISOString(), likes: [], comments: [], pinned: false, isPending: true };
-        setPosts(prev => [...prev, newPost]); setNewContent('');
+        const newPost = { 
+            id: tempId, 
+            channelId: activeChannel, 
+            author: authUser.name, 
+            role: authUser.role, 
+            content: newContent, 
+            timestamp: new Date().toISOString(), 
+            likes: [], 
+            comments: [], 
+            pinned: false, 
+            banner: previewBanner || null,
+            isPending: true 
+        };
+        setPosts(prev => [...prev, newPost]); 
+        setNewContent('');
+        setPreviewBanner('');
         
         const newReads = [...readPosts, tempId];
         setReadPosts(newReads); localStorage.setItem(`recruitOps_read_${authUser.username}`, JSON.stringify(newReads));
@@ -207,6 +316,13 @@ export const AnnouncementCenter = ({authUser}) => {
                         {canDelete(p) && !p.isPending && !p.isEditing && <button disabled={p.isDeleting} onClick={() => handleDelete(p.id)} className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${p.isDeleting ? 'bg-gray-50 border-gray-200 text-gray-300' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30'}`}><i className="ph-bold ph-trash text-base"></i></button>}
                     </div>
                 </div>
+                
+                {/* Auto-Generated Banner */}
+                {p.banner && (
+                    <div className="mb-4 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700/60 shadow-sm relative z-10">
+                        <img src={p.banner} alt="Post Banner" className="w-full h-auto object-cover max-h-[225px]" referrerPolicy="no-referrer" />
+                    </div>
+                )}
                 
                 {/* Konten Pesan */}
                 {editingPost?.id === p.id ? (
@@ -416,6 +532,19 @@ export const AnnouncementCenter = ({authUser}) => {
                             ) : (
                                 <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl p-3 sm:p-4 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all shadow-inner">
                                     <textarea rows="3" placeholder={`Ketik pengumuman baru di #${activeChannelInfo.name}...`} value={newContent} onChange={e => setNewContent(e.target.value)} className="w-full bg-transparent border-none outline-none resize-none text-sm font-medium custom-scrollbar mb-2 text-gray-800 dark:text-gray-100 placeholder-gray-400"></textarea>
+                                    
+                                    {/* Live Auto-Generated Banner Preview */}
+                                    {previewBanner && (
+                                        <div className="mb-4 p-2 bg-white dark:bg-gray-800/80 rounded-2xl border border-gray-100 dark:border-gray-700/60 shadow-inner max-w-full">
+                                            <div className="text-[10px] font-black text-indigo-500 dark:text-indigo-400 mb-1.5 flex items-center gap-1.5 uppercase tracking-widest px-1">
+                                                <i className="ph-fill ph-sparkle text-xs animate-spin" style={{ animationDuration: '3s' }}></i> Auto-Generated Post Banner
+                                            </div>
+                                            <div className="rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700/40">
+                                                <img src={previewBanner} alt="Banner Preview" className="w-full h-auto object-cover max-h-[140px]" />
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700/80">
                                         <div className="flex items-center gap-2">
                                             <div className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] text-white ${getRoleStyle(authUser.role).avatarBg}`}>{authUser.name.charAt(0).toUpperCase()}</div>
