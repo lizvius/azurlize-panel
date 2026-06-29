@@ -370,13 +370,135 @@ export default function App() {
             <InstallPWA />
             <div className="flex flex-1 overflow-hidden relative w-full max-w-full overflow-x-hidden">
                 
-                {/* Mobile Sidebar Overlay */}
-                {isMobile && isSidebarOpen && (
-                    <div className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-40 transition-opacity animate-in fade-in duration-300" onClick={() => setSidebarOpen(false)} />
-                )}
+                {/* Mobile Bottom Sheet Menu (Immersive Android Style) */}
+                <AnimatePresence>
+                    {isMobile && isSidebarOpen && (
+                        <>
+                            {/* Overlay background */}
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="fixed inset-0 bg-gray-900/60 dark:bg-black/80 backdrop-blur-md z-50 cursor-pointer"
+                                onClick={() => setSidebarOpen(false)}
+                            />
+
+                            {/* Bottom Sheet Container */}
+                            <motion.div 
+                                initial={{ y: '100%' }}
+                                animate={{ y: 0 }}
+                                exit={{ y: '100%' }}
+                                transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                                className="fixed bottom-0 inset-x-0 z-50 max-h-[85vh] bg-white dark:bg-[#111827] rounded-t-[36px] border-t border-gray-200/60 dark:border-gray-800/60 shadow-[0_-15px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_-15px_40px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden pb-8"
+                            >
+                                {/* Drag / Gesture Handle Bar */}
+                                <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto my-3.5 shrink-0" />
+
+                                {/* Sheet Header */}
+                                <div className="px-6 pb-4 pt-1 border-b border-gray-100 dark:border-gray-800/60 flex items-center justify-between shrink-0">
+                                    <div>
+                                        <span className="text-[10px] uppercase font-black tracking-widest text-indigo-600 dark:text-indigo-400">Team AzurLize</span>
+                                        <h3 className="text-lg font-black text-gray-900 dark:text-white">Menu Navigasi</h3>
+                                    </div>
+                                    <button 
+                                        onClick={() => setSidebarOpen(false)} 
+                                        className="w-9 h-9 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:text-rose-500 transition-colors"
+                                    >
+                                        <i className="ph-bold ph-x text-lg"></i>
+                                    </button>
+                                </div>
+
+                                {/* Scrollable Content inside Sheet */}
+                                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6 custom-scrollbar">
+                                    
+                                    {/* Profile Card inside Bottom Sheet */}
+                                    <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800/60 flex items-center justify-between shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-md ${roleStyle.avatarBg} relative`}>
+                                                {authUser.name && typeof authUser.name === 'string' ? authUser.name.charAt(0).toUpperCase() : 'U'}
+                                                <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-sm font-black text-gray-900 dark:text-white truncate max-w-[150px]">{authUser.name || 'User'}</h4>
+                                                <span className={`text-[9px] uppercase font-black tracking-wider ${roleStyle.textRole}`}>{authUser.role || 'Staff'}</span>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => {
+                                                setSidebarOpen(false);
+                                                logout();
+                                            }} 
+                                            className="px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                                        >
+                                            <i className="ph-bold ph-sign-out"></i>
+                                            Keluar
+                                        </button>
+                                    </div>
+
+                                    {/* Categorized List Items */}
+                                    <div className="space-y-6">
+                                        {NAVIGATION.map((group, idx) => (
+                                            <div key={idx} className="space-y-2.5">
+                                                <div className="flex items-center gap-2 px-2">
+                                                    <span className="text-[10px] font-black tracking-widest text-gray-400 dark:text-gray-500 uppercase">{group.s}</span>
+                                                    <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800/80"></div>
+                                                </div>
+                                                <div className="grid grid-cols-1 gap-2">
+                                                    {group.items.map(item => {
+                                                        const isActive = activeTab === item.id;
+                                                        return (
+                                                            <motion.button
+                                                                key={item.id}
+                                                                whileTap={{ scale: 0.98 }}
+                                                                onClick={() => changeTab(item.id)}
+                                                                className={`w-full text-left p-3.5 rounded-2xl border flex items-center justify-between transition-all duration-300 relative overflow-hidden ${
+                                                                    isActive
+                                                                    ? 'bg-indigo-600/5 dark:bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400'
+                                                                    : 'bg-white dark:bg-[#1f2937]/20 border-gray-100 dark:border-gray-800/40 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1f2937]/40'
+                                                                }`}
+                                                            >
+                                                                {/* Glowing Side Indicator */}
+                                                                {isActive && (
+                                                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-r-md"></div>
+                                                                )}
+
+                                                                <div className="flex items-center gap-3.5 z-10">
+                                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                                                                        isActive
+                                                                        ? 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white shadow-md shadow-indigo-500/20'
+                                                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                                                                    }`}>
+                                                                        <i className={`${isActive ? 'ph-fill' : 'ph-bold'} ${item.i} text-lg`}></i>
+                                                                    </div>
+                                                                    <span className="text-sm font-bold tracking-wide">{item.l}</span>
+                                                                </div>
+
+                                                                <div className="flex items-center gap-2">
+                                                                    {(item as any).badge > 0 && (
+                                                                        <span className="bg-rose-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black animate-pulse">
+                                                                            {(item as any).badge}
+                                                                        </span>
+                                                                    )}
+                                                                    <i className={`ph-bold ph-caret-right text-xs transition-transform ${
+                                                                        isActive ? 'text-indigo-500 dark:text-indigo-400 translate-x-0.5' : 'text-gray-400'
+                                                                    }`}></i>
+                                                                </div>
+                                                            </motion.button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
             
                 {/* MODERN SIDEBAR (Desktop & Laptop) */}
-                <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white/80 dark:bg-[#111827]/80 backdrop-blur-2xl border-r border-gray-200/50 dark:border-gray-800/50 transform transition-transform duration-500 ease-out flex flex-col shadow-[20px_0_40px_rgba(0,0,0,0.05)] lg:shadow-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                <aside className="hidden lg:flex static inset-y-0 left-0 z-50 w-72 bg-white/80 dark:bg-[#111827]/80 backdrop-blur-2xl border-r border-gray-200/50 dark:border-gray-800/50 flex-col shadow-none">
                     
                     {/* Header Logo Sidebar */}
                     <div className="h-20 flex items-center px-6 border-b border-gray-200/50 dark:border-gray-800/50 shrink-0">
@@ -390,15 +512,10 @@ export default function App() {
                         <span className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">
                             Team<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">AzurLize</span>
                         </span>
-                        {isMobile && (
-                            <button onClick={()=>setSidebarOpen(false)} className="ml-auto w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:text-rose-500 transition-colors">
-                                <i className="ph-bold ph-x"></i>
-                            </button>
-                        )}
                     </div>
                     
                     {/* Menu Items */}
-                    <div className="flex-1 overflow-y-auto py-6 px-4 custom-scrollbar pb-24 lg:pb-6">
+                    <div className="flex-1 overflow-y-auto py-6 px-4 custom-scrollbar pb-6">
                         {NAVIGATION.map((group, idx) => (
                             <div key={idx} className="mb-8">
                                 <h4 className="px-2 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-3">
