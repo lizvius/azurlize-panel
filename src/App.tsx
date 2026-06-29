@@ -97,9 +97,37 @@ export default function App() {
     }, [isDark]);
 
     useEffect(() => {
-        if (authUser)
-            setActiveTab(authUser.role === 'Staff' ? 'daily_stats' : 'dashboard');
-        }, [authUser]);
+        if (!authUser) return;
+        
+        const getHasAccess = (tabId: string) => {
+            if (authUser.role === 'Superadmin') return true;
+            const perm = permissions[tabId];
+            if (!perm) return true;
+            return perm.view.map((r: string) => r.toLowerCase()).includes(authUser.role.toLowerCase());
+        };
+
+        const defaultTab = authUser.role === 'Staff' ? 'daily_stats' : 'dashboard';
+        const isCurrentAllowed = getHasAccess(activeTab);
+
+        // Check if the current tab is allowed, otherwise redirect to the first allowed tab
+        if (!isCurrentAllowed) {
+            const tabsOrder = [
+                'dashboard', 'announcement', 'follow_up', 
+                'performance', 'goals', 'channels', 
+                'daily_data', 'daily_stats', 'payroll', 'users', 
+                'settings', 'superadmin_tools'
+            ];
+            const firstAllowed = tabsOrder.find(t => getHasAccess(t));
+            if (firstAllowed) {
+                setActiveTab(firstAllowed);
+            }
+        } else if (activeTab === 'dashboard' && authUser.role === 'Staff' && !getHasAccess('dashboard')) {
+            // Special edge case where staff lands on dashboard initially before effect can run
+            const tabsOrder = ['daily_stats', 'announcement', 'daily_data', 'follow_up'];
+            const firstAllowed = tabsOrder.find(t => getHasAccess(t));
+            if (firstAllowed) setActiveTab(firstAllowed);
+        }
+    }, [authUser, permissions, activeTab]);
     
     useEffect(() => {
         const changeTab = (tab: string) => () => setActiveTab(tab);
@@ -230,6 +258,22 @@ export default function App() {
     let pageTitle = 'Dashboard'; NAVIGATION.forEach(sec => sec.items.forEach(item => { if(item.id === activeTab) pageTitle = item.l; }));
 
     const renderPageContent = () => {
+        // Guard check using permissions
+        if (authUser.role !== 'Superadmin' && permissions[activeTab]) {
+            const hasAccess = permissions[activeTab].view.map((r: string) => r.toLowerCase()).includes(authUser.role.toLowerCase());
+            if (!hasAccess) {
+                return (
+                    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                        <div className="w-16 h-16 bg-red-50 dark:bg-red-950/40 rounded-2xl flex items-center justify-center text-red-500 mb-4 border border-red-100 dark:border-red-900/30">
+                            <i className="ph-bold ph-shield-warning text-3xl"></i>
+                        </div>
+                        <h3 className="text-lg font-black text-gray-900 dark:text-white mb-1">Akses Ditolak</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">Anda tidak memiliki hak akses untuk melihat menu "{permissions[activeTab].name}". Hubungi Superadmin jika ini adalah kesalahan.</p>
+                    </div>
+                );
+            }
+        }
+
         switch(activeTab) {
             case 'dashboard': return <ExecutiveDashboard authUser={authUser} />;
             case 'announcement': return <AnnouncementCenter authUser={authUser} />;
@@ -247,7 +291,17 @@ export default function App() {
         }
     };
 
-    const bottomNavItems = [...(authUser.role !== 'Staff' ? [{ id: 'dashboard', label: 'Home', icon: 'ph-house' }] : []), { id: 'announcement', label: 'Comm', icon: 'ph-megaphone', badge: unreadAnnouncements }, { id: 'daily_data', label: 'Input', icon: 'ph-address-book' }, { id: 'daily_stats', label: 'Stats', icon: 'ph-chart-bar' }, { id: 'follow_up', label: 'Follow', icon: 'ph-bell-ringing' }];
+    const bottomNavItems = [
+        ...(authUser.role !== 'Staff' ? [{ id: 'dashboard', label: 'Home', icon: 'ph-house' }] : []), 
+        { id: 'announcement', label: 'Comm', icon: 'ph-megaphone', badge: unreadAnnouncements }, 
+        { id: 'daily_data', label: 'Input', icon: 'ph-address-book' }, 
+        { id: 'daily_stats', label: 'Stats', icon: 'ph-chart-bar' }, 
+        { id: 'follow_up', label: 'Follow', icon: 'ph-bell-ringing' }
+    ].filter(item => {
+        const itemConfig = permissions[item.id];
+        if (!itemConfig) return true;
+        return itemConfig.view.map((r: string) => r.toLowerCase()).includes(authUser.role.toLowerCase());
+    });
 
     const getRoleStyle = (role: string) => {
         const r = (role || 'staff').toLowerCase();

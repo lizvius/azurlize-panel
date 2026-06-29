@@ -3,16 +3,16 @@ import { Card } from './UI';
 import { SCRIPT_URL } from '../utils';
 
 export const AuthLayout = ({ children, title, subtitle, onBack, isDark, onToggleDark }: any) => (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0B0F19] p-4 transition-colors duration-300 relative overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#F8FAFC] dark:bg-[#0B0F19] p-4 sm:p-6 transition-colors duration-300 relative overflow-y-auto">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-500/10 dark:bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-500/10 dark:bg-purple-500/5 rounded-full blur-[100px] pointer-events-none"></div>
         
-        {/* Top bar for Back and Dark Mode buttons */}
-        <div className="absolute top-0 left-0 right-0 h-20 px-4 sm:px-6 lg:px-8 flex items-center justify-between z-50">
+        {/* Compact, responsive control bar directly above the card instead of absolute top */}
+        <div className="w-full max-w-md flex items-center justify-between mb-4 z-10">
             {onBack ? (
                 <button 
                     onClick={onBack} 
-                    className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                    className="px-3.5 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
                 >
                     <i className="ph-bold ph-arrow-left"></i> Kembali
                 </button>
@@ -21,21 +21,22 @@ export const AuthLayout = ({ children, title, subtitle, onBack, isDark, onToggle
             <button 
                 onClick={onToggleDark} 
                 className="p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl shadow-sm transition-transform active:scale-95"
+                title="Ganti Mode Tema"
             >
-                <i className={`ph-bold ${isDark ? 'ph-sun' : 'ph-moon'} text-lg`}></i>
+                <i className={`ph-bold ${isDark ? 'ph-sun' : 'ph-moon'} text-base`}></i>
             </button>
         </div>
 
-        <Card className="w-full max-w-lg p-6 sm:p-10 md:p-12 relative z-10 shadow-2xl shadow-indigo-100/50 dark:shadow-none border-t-4 border-t-indigo-600">
+        <Card className="w-full max-w-md p-6 sm:p-8 relative z-10 shadow-2xl shadow-indigo-100/50 dark:shadow-none border-t-4 border-t-indigo-600">
             <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.4)] border-t border-indigo-400/50 relative overflow-hidden group">
+                <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.4)] border-t border-indigo-400/50 relative overflow-hidden group">
                     <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <svg className="w-9 h-9 text-white relative z-10 drop-shadow-lg group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 21H7.5L12 11L16.5 21H21L12 2Z" fill="currentColor"/><path d="M9.5 15H14.5L12 9.5L9.5 15Z" fill="currentColor" fillOpacity="0.4"/></svg>
+                    <svg className="w-8 h-8 text-white relative z-10 drop-shadow-lg group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 21H7.5L12 11L16.5 21H21L12 2Z" fill="currentColor"/><path d="M9.5 15H14.5L12 9.5L9.5 15Z" fill="currentColor" fillOpacity="0.4"/></svg>
                 </div>
             </div>
             <div className="text-center mb-8">
-                <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Team<span className="text-indigo-600 dark:text-indigo-400">AzurLize</span></h1>
-                <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{title}</p>
+                <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-1.5 tracking-tight">Team<span className="text-indigo-600 dark:text-indigo-400">AzurLize</span></h1>
+                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{title}</p>
                 {subtitle && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{subtitle}</p>}
             </div>
             {children}
