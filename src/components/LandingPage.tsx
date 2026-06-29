@@ -1,36 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-export interface WorkflowStep {
+interface WorkflowStep {
     id: string;
     title: string;
     desc: string;
 }
 
-export interface UploadedImage {
+interface UploadedImage {
     id: string;
     url: string;
     title: string;
 }
 
-// 1. Buat interface baru untuk struktur data halamannya
-export interface LandingPageData {
-    heroTitle: string;
-    heroSubtitle: string;
-    steps: WorkflowStep[];
-    images: UploadedImage[];
-}
-
-// 2. Tambahkan 'data' ke dalam props
 interface LandingPageProps {
     onOpenAuth: (view: 'login' | 'register') => void;
     isDark: boolean;
     onToggleDark: () => void;
-    data: LandingPageData;
 }
 
-export const LandingPage = ({ onOpenAuth, isDark, onToggleDark, data }: LandingPageProps) => {
+export const LandingPage = ({ onOpenAuth, isDark, onToggleDark }: LandingPageProps) => {
     const [showWorkflowWizard, setShowWorkflowWizard] = useState(false);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
+
+    const [landingData, setLandingData] = useState<any>(() => {
+        try {
+            const saved = localStorage.getItem('recruitOps_landing_data_v2');
+            if (saved) return JSON.parse(saved);
+        } catch (e) {}
+        return {
+            heroTitle: "AzurLize Recruitment & Performance Hub",
+            heroSubtitle: "Sistem terpadu untuk koordinasi, evaluasi, dan rekapitulasi performa tim recruiter AzurLize secara real-time. Kelola target harian dan optimalkan efisiensi kerja tim dalam satu platform modern.",
+            steps: [
+                { id: "1", title: "Promosi & Pencarian", desc: "Mencari dan menjaring kandidat baru melalui berbagai platform media sosial seperti Instagram, TikTok, WhatsApp, dll." },
+                { id: "2", title: "Pelaporan Harian", desc: "Melaporkan data pelamar, postingan, kunjungan, dan pengujian harian secara mandiri sebelum batas waktu pelaporan." },
+                { id: "3", title: "Validasi Laporan (Acc)", desc: "Superadmin & Admin memvalidasi data pelamar yang masuk, menandai data yang Acc, serta mengunci laporan kerja." },
+                { id: "4", title: "Evaluasi & Payroll", desc: "Sistem menghitung otomatis denda keterlambatan lapor, denda missed-target, insentif harian, serta akumulasi bonus bulanan." }
+            ],
+            images: [
+                { id: "img1", url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80", title: "Kolaborasi Tim Recruiter" },
+                { id: "img2", url: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80", title: "Analisis Target Bulanan" }
+            ]
+        };
+    });
+
+    useEffect(() => {
+        const handleLandingUpdate = () => {
+            try {
+                const saved = localStorage.getItem('recruitOps_landing_data_v2');
+                if (saved) setLandingData(JSON.parse(saved));
+            } catch (e) {}
+        };
+        window.addEventListener('landingUpdated', handleLandingUpdate);
+        return () => window.removeEventListener('landingUpdated', handleLandingUpdate);
+    }, []);
 
     const openWizardAt = (index: number) => {
         setCurrentStepIndex(index);
@@ -91,7 +113,7 @@ export const LandingPage = ({ onOpenAuth, isDark, onToggleDark, data }: LandingP
                     <div className="w-full flex justify-start mb-8">
                         <button 
                             onClick={() => setShowWorkflowWizard(false)}
-                            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
                         >
                             <i className="ph-bold ph-arrow-left"></i> Kembali ke Beranda
                         </button>
@@ -104,12 +126,12 @@ export const LandingPage = ({ onOpenAuth, isDark, onToggleDark, data }: LandingP
                         {/* Progress Header */}
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-100 dark:border-gray-800">
                             <span className="text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-                                Langkah {currentStepIndex + 1} dari {data.steps.length}
+                                Langkah {currentStepIndex + 1} dari {landingData.steps.length}
                             </span>
                             
                             {/* Step Dots */}
                             <div className="flex items-center gap-2">
-                                {data.steps.map((_: any, idx: number) => (
+                                {landingData.steps.map((_: any, idx: number) => (
                                     <button
                                         key={idx}
                                         onClick={() => setCurrentStepIndex(idx)}
@@ -145,10 +167,10 @@ export const LandingPage = ({ onOpenAuth, isDark, onToggleDark, data }: LandingP
                             {/* Text Explanation */}
                             <div className="md:col-span-8 text-center md:text-left">
                                 <h3 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mb-4">
-                                    {data.steps[currentStepIndex].title}
+                                    {landingData.steps[currentStepIndex].title}
                                 </h3>
                                 <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
-                                    {data.steps[currentStepIndex].desc}
+                                    {landingData.steps[currentStepIndex].desc}
                                 </p>
                             </div>
                         </div>
@@ -163,9 +185,9 @@ export const LandingPage = ({ onOpenAuth, isDark, onToggleDark, data }: LandingP
                                 <i className="ph-bold ph-caret-left"></i> Sebelumnya
                             </button>
 
-                            {currentStepIndex < data.steps.length - 1 ? (
+                            {currentStepIndex < landingData.steps.length - 1 ? (
                                 <button
-                                    onClick={() => setCurrentStepIndex(prev => Math.min(data.steps.length - 1, prev + 1))}
+                                    onClick={() => setCurrentStepIndex(prev => Math.min(landingData.steps.length - 1, prev + 1))}
                                     className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-indigo-500/10 flex items-center gap-2"
                                 >
                                     Selanjutnya <i className="ph-bold ph-caret-right"></i>
@@ -191,10 +213,10 @@ export const LandingPage = ({ onOpenAuth, isDark, onToggleDark, data }: LandingP
                                 Sistem Terpadu Recruiter
                             </span>
                             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 dark:text-white tracking-tight leading-tight mb-6">
-                                {data.heroTitle}
+                                {landingData.heroTitle}
                             </h1>
                             <p className="text-base sm:text-lg md:text-xl text-gray-500 dark:text-gray-400 leading-relaxed font-medium mb-10">
-                                {data.heroSubtitle}
+                                {landingData.heroSubtitle}
                             </p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                 <button 
@@ -221,7 +243,7 @@ export const LandingPage = ({ onOpenAuth, isDark, onToggleDark, data }: LandingP
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {data.steps.map((step: WorkflowStep, index: number) => (
+                            {landingData.steps.map((step: WorkflowStep, index: number) => (
                                 <div 
                                     key={step.id || index} 
                                     onClick={() => openWizardAt(index)}
@@ -251,7 +273,7 @@ export const LandingPage = ({ onOpenAuth, isDark, onToggleDark, data }: LandingP
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {data.images.map((img: UploadedImage, index: number) => (
+                            {landingData.images.map((img: UploadedImage, index: number) => (
                                 <div key={img.id || index} className="bg-white dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-800/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
                                     <div className="aspect-[16/9] w-full overflow-hidden relative bg-gray-100 dark:bg-gray-800">
                                         <img 
@@ -267,7 +289,7 @@ export const LandingPage = ({ onOpenAuth, isDark, onToggleDark, data }: LandingP
                                     </div>
                                 </div>
                             ))}
-                            {data.images.length === 0 && (
+                            {landingData.images.length === 0 && (
                                 <div className="col-span-2 text-center py-16 bg-white dark:bg-gray-800/20 border border-gray-200 dark:border-gray-800 rounded-2xl">
                                     <i className="ph-bold ph-image-square text-4xl text-gray-400 mb-2 block"></i>
                                     <p className="text-gray-500 dark:text-gray-400 font-bold text-sm">Belum ada gambar yang diunggah.</p>

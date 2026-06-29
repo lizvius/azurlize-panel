@@ -1,57 +1,58 @@
-import React, { useState } from 'react';
-import { Card, Badge } from './UI'; // Pastikan path import ini sesuai dengan struktur foldermu
+import React, { useState, useEffect } from 'react';
+import { Card, Badge } from './UI';
 
-export interface PagePermission {
+interface PagePermission {
     name: string;
     view: string[];
     edit: string[];
 }
 
-export interface WorkflowStep {
-    id: string;
-    title: string;
-    desc: string;
-}
-
-export interface UploadedImage {
-    id: string;
-    url: string;
-    title: string;
-}
-
-export interface LandingPageData {
-    heroTitle: string;
-    heroSubtitle: string;
-    steps: WorkflowStep[];
-    images: UploadedImage[];
-}
-
-interface SuperadminToolsProps {
-    authUser: any;
-    // Props untuk Permissions
-    initialPermissions: Record<string, PagePermission>;
-    defaultPermissions: Record<string, PagePermission>;
-    onSavePermissions: (newPermissions: Record<string, PagePermission>) => void;
-    
-    // Props untuk Landing Page
-    initialLandingData: LandingPageData;
-    onSaveLandingData: (newLandingData: LandingPageData) => void;
-}
-
-export const SuperadminTools = ({ 
-    authUser, 
-    initialPermissions, 
-    defaultPermissions, 
-    onSavePermissions, 
-    initialLandingData, 
-    onSaveLandingData 
-}: SuperadminToolsProps) => {
+export const SuperadminTools = ({ authUser }: { authUser: any }) => {
     const [activeSubTab, setActiveSubTab] = useState<'permissions' | 'landing'>('permissions');
     const [toast, setToast] = useState<string | null>(null);
 
-    // State diinisialisasi dari props, BUKAN hardcode localStorage
-    const [permissions, setPermissions] = useState<Record<string, PagePermission>>(initialPermissions);
-    const [landingData, setLandingData] = useState<LandingPageData>(initialLandingData);
+    // Permissions State
+    const [permissions, setPermissions] = useState<Record<string, PagePermission>>(() => {
+        try {
+            const saved = localStorage.getItem('recruitOps_permissions_v2');
+            if (saved) return JSON.parse(saved);
+        } catch (e) {}
+        return {
+            dashboard: { name: 'Dashboard', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+            announcement: { name: 'Pemberitahuan Dan Chat', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+            follow_up: { name: 'Follow Up', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin', 'Staff'] },
+            performance: { name: 'Recruiter Performance', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+            goals: { name: 'Recruitment Goals', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+            channels: { name: 'Channel Performance', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+            daily_data: { name: 'Daily Data', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin', 'Staff'] },
+            daily_stats: { name: 'Daily Stats', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin', 'Staff'] },
+            payroll: { name: 'Payroll', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+            users: { name: 'User Accounts', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin'] },
+            settings: { name: 'Settings', view: ['Superadmin'], edit: ['Superadmin'] }
+        };
+    });
+
+    // Landing Editor State
+    const [landingData, setLandingData] = useState<any>(() => {
+        try {
+            const saved = localStorage.getItem('recruitOps_landing_data_v2');
+            if (saved) return JSON.parse(saved);
+        } catch (e) {}
+        return {
+            heroTitle: "AzurLize Recruitment & Performance Hub",
+            heroSubtitle: "Sistem terpadu untuk koordinasi, evaluasi, dan rekapitulasi performa tim recruiter AzurLize secara real-time. Kelola target harian dan optimalkan efisiensi kerja tim dalam satu platform modern.",
+            steps: [
+                { id: "1", title: "Promosi & Pencarian", desc: "Mencari dan menjaring kandidat baru melalui berbagai platform media sosial seperti Instagram, TikTok, WhatsApp, dll." },
+                { id: "2", title: "Pelaporan Harian", desc: "Melaporkan data pelamar, postingan, kunjungan, dan pengujian harian secara mandiri sebelum batas waktu pelaporan." },
+                { id: "3", title: "Validasi Laporan (Acc)", desc: "Superadmin & Admin memvalidasi data pelamar yang masuk, menandai data yang Acc, serta mengunci laporan kerja." },
+                { id: "4", title: "Evaluasi & Payroll", desc: "Sistem menghitung otomatis denda keterlambatan lapor, denda missed-target, insentif harian, serta akumulasi bonus bulanan." }
+            ],
+            images: [
+                { id: "img1", url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80", title: "Kolaborasi Tim Recruiter" },
+                { id: "img2", url: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80", title: "Analisis Target Bulanan" }
+            ]
+        };
+    });
 
     // New Step Form State
     const [newStepTitle, setNewStepTitle] = useState('');
@@ -95,16 +96,29 @@ export const SuperadminTools = ({
     };
 
     const handleSavePermissions = () => {
-        // Mengirim data kembali ke parent untuk disimpan (misal ke database / localStorage spesifik)
-        onSavePermissions(permissions);
+        localStorage.setItem('recruitOps_permissions_v2', JSON.stringify(permissions));
         showToast("✓ Hak akses halaman berhasil diperbarui!");
+        window.dispatchEvent(new Event('permissionsUpdated'));
     };
 
     const handleResetPermissions = () => {
-        // Menggunakan default dari props
-        setPermissions(defaultPermissions);
-        onSavePermissions(defaultPermissions);
+        const defaults = {
+            dashboard: { name: 'Dashboard', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+            announcement: { name: 'Pemberitahuan Dan Chat', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+            follow_up: { name: 'Follow Up', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin', 'Staff'] },
+            performance: { name: 'Recruiter Performance', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+            goals: { name: 'Recruitment Goals', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+            channels: { name: 'Channel Performance', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+            daily_data: { name: 'Daily Data', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin', 'Staff'] },
+            daily_stats: { name: 'Daily Stats', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin', 'Staff'] },
+            payroll: { name: 'Payroll', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+            users: { name: 'User Accounts', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin'] },
+            settings: { name: 'Settings', view: ['Superadmin'], edit: ['Superadmin'] }
+        };
+        setPermissions(defaults);
+        localStorage.setItem('recruitOps_permissions_v2', JSON.stringify(defaults));
         showToast("✓ Hak akses telah dikembalikan ke default!");
+        window.dispatchEvent(new Event('permissionsUpdated'));
     };
 
     // -------------------------------------------------------------
@@ -123,7 +137,7 @@ export const SuperadminTools = ({
         e.preventDefault();
         if (!newStepTitle.trim() || !newStepDesc.trim()) return;
 
-        const newStep: WorkflowStep = {
+        const newStep = {
             id: Date.now().toString(),
             title: newStepTitle.trim(),
             desc: newStepDesc.trim()
@@ -143,7 +157,7 @@ export const SuperadminTools = ({
     const handleDeleteStep = (id: string) => {
         const updated = {
             ...landingData,
-            steps: landingData.steps.filter((s: WorkflowStep) => s.id !== id)
+            steps: landingData.steps.filter((s: any) => s.id !== id)
         };
         setLandingData(updated);
         showToast("✓ Langkah alur kerja berhasil dihapus!");
@@ -169,7 +183,7 @@ export const SuperadminTools = ({
         e.preventDefault();
         if (!newImageTitle.trim() || !newImageUrl) return;
 
-        const newImg: UploadedImage = {
+        const newImg = {
             id: Date.now().toString(),
             url: newImageUrl,
             title: newImageTitle.trim()
@@ -189,16 +203,16 @@ export const SuperadminTools = ({
     const handleDeleteImage = (id: string) => {
         const updated = {
             ...landingData,
-            images: landingData.images.filter((img: UploadedImage) => img.id !== id)
+            images: landingData.images.filter((img: any) => img.id !== id)
         };
         setLandingData(updated);
         showToast("✓ Gambar berhasil dihapus!");
     };
 
     const handleSaveLanding = () => {
-        // Mengirim data kembali ke parent untuk disimpan
-        onSaveLandingData(landingData);
+        localStorage.setItem('recruitOps_landing_data_v2', JSON.stringify(landingData));
         showToast("✓ Landing page berhasil disimpan dan dipublikasikan!");
+        window.dispatchEvent(new Event('landingUpdated'));
     };
 
     return (
@@ -379,7 +393,7 @@ export const SuperadminTools = ({
                             
                             {/* Steps Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {landingData.steps.map((step: WorkflowStep, idx: number) => (
+                                {landingData.steps.map((step: any, idx: number) => (
                                     <div key={step.id || idx} className="bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex justify-between items-start gap-4">
                                         <div className="min-w-0">
                                             <span className="inline-flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 w-6 h-6 rounded-md font-black text-xs mb-2">
@@ -439,7 +453,7 @@ export const SuperadminTools = ({
 
                             {/* Images Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {landingData.images.map((img: UploadedImage, idx: number) => (
+                                {landingData.images.map((img: any, idx: number) => (
                                     <div key={img.id || idx} className="bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden p-3 flex gap-4 items-center">
                                         <div className="w-24 aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0 border border-gray-200/50 dark:border-gray-700">
                                             <img src={img.url} alt={img.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
