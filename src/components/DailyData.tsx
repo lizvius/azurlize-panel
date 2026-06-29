@@ -16,7 +16,7 @@ export const DailyData = ({ authUser }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false); 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [deleteConfirmId, setDeleteConfirmId] = useState(null); // STATE BARU: Custom Modal Hapus
+    const [deleteConfirmId, setDeleteConfirmId] = useState(null);
     const [modalMode, setModalMode] = useState('add');
     const [activeTab, setActiveTab] = useState('thisWeek'); 
     const [historyFilter, setHistoryFilter] = useState(-1); 
@@ -206,7 +206,6 @@ export const DailyData = ({ authUser }) => {
         }
     };
 
-    // EKSEKUSI HAPUS SETELAH KONFIRMASI DARI CUSTOM MODAL
     const confirmDelete = async () => {
         if (!deleteConfirmId) return;
         
@@ -303,7 +302,7 @@ export const DailyData = ({ authUser }) => {
                 </div>
             )}
 
-            {/* MODAL KONFIRMASI HAPUS DATA (Menggantikan window.confirm) */}
+            {/* MODAL KONFIRMASI HAPUS DATA */}
             {deleteConfirmId && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm animate-in fade-in">
                     <div className="bg-white dark:bg-[#161a2b] p-6 sm:p-8 rounded-3xl shadow-2xl max-w-sm w-full border border-gray-200 dark:border-white/10 text-center animate-in zoom-in-95 duration-200">
@@ -323,7 +322,6 @@ export const DailyData = ({ authUser }) => {
             {/* Action Bar (Search & Button) */}
             <div className="flex flex-col sm:flex-row justify-end items-center gap-3 mb-4 md:mb-6 pt-2 w-full">
                 
-                {/* Search Input Modern */}
                 <div className="relative w-full sm:w-[280px] shrink-0">
                     <i className="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-lg"></i>
                     <input 
@@ -421,7 +419,6 @@ export const DailyData = ({ authUser }) => {
                 </div>
             )}
 
-            {/* Jika sedang mencari, tampilkan info pencarian */}
             {searchQuery && (
                 <div className="mb-4 text-xs font-bold text-indigo-500 dark:text-indigo-400 flex items-center gap-2 bg-indigo-50 dark:bg-indigo-500/10 p-3 rounded-xl border border-indigo-100 dark:border-indigo-500/20 shadow-sm">
                     <i className="ph-bold ph-info"></i> Menampilkan hasil pencarian untuk "{searchQuery}"
@@ -466,12 +463,10 @@ export const DailyData = ({ authUser }) => {
                                     
                                     {isPrivileged && (
                                         <div className="flex gap-2 pt-3 mt-auto border-t border-gray-100 dark:border-white/5 relative z-10">
-                                            {/* TOMBOL EDIT PADA ANDROID */}
                                             <button type="button" onClick={() => handleOpenEdit(d)} className="flex-1 py-2 h-[40px] bg-gray-50 hover:bg-gray-100 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl text-[11px] font-bold text-gray-600 dark:text-gray-300 transition-colors flex justify-center items-center gap-1 active:scale-95">
                                                 <i className="ph-bold ph-pencil-simple text-sm"></i> Edit
                                             </button>
                                             
-                                            {/* TOMBOL HAPUS PADA ANDROID MENGGUNAKAN CUSTOM MODAL */}
                                             <button type="button" onClick={() => setDeleteConfirmId(d?.id)} className="flex-1 py-2 h-[40px] bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 rounded-xl text-[11px] font-bold text-rose-600 dark:text-rose-400 transition-colors flex justify-center items-center gap-1 active:scale-95">
                                                 <i className="ph-bold ph-trash text-sm"></i> Hapus
                                             </button>
@@ -577,14 +572,21 @@ export const DailyData = ({ authUser }) => {
                                 <div className="space-y-4 bg-white dark:bg-white/5 p-4 sm:p-5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm">
                                     <h4 className="font-black text-xs text-indigo-500 uppercase tracking-widest border-b border-gray-100 dark:border-white/10 pb-2 mb-4 flex items-center"><i className="ph-bold ph-identification-card mr-2"></i> Identitas & Penanggung Jawab</h4>
                                     <div><Label icon="ph-calendar">Tanggal Terdaftar</Label><input type="date" required className={inputClass} value={formData.tanggal} onChange={e=>setFormData({...formData, tanggal: e.target.value})}/></div>
+                                    
+                                    {/* DIBAWAH INI ADALAH BAGIAN YANG TELAH DIUBAH MENJADI INPUT MANUAL */}
                                     <div>
                                         <Label icon="ph-user-gear">Recruiter (Agen)</Label>
-                                        <select required className={inputClass} value={formData.recruiter} onChange={e=>setFormData({...formData, recruiter: e.target.value})} disabled={authUser && authUser?.role === 'Staff'}>
-                                            <option value="" disabled>-- Pilih Agen Bertugas --</option>
-                                            {(Array.isArray(users) ? users : []).filter(u => u?.status === 'Aktif' && u?.role === 'Staff').map((u, i) => <option key={i} value={u?.username}>{u?.name} ({u?.username})</option>)}
-                                            {formData.recruiter && !(Array.isArray(users) ? users : []).find(u => u?.username === formData.recruiter) && (<option value={formData.recruiter}>{formData.recruiter} (Legacy/Non-Aktif)</option>)}
-                                        </select>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Ketik nama recruiter/agen..." 
+                                            required 
+                                            className={inputClass} 
+                                            value={formData.recruiter} 
+                                            onChange={e=>setFormData({...formData, recruiter: e.target.value})} 
+                                            disabled={authUser && authUser?.role === 'Staff'}
+                                        />
                                     </div>
+
                                     <div><Label icon="ph-user">Nama Pelamar (Username Tele)</Label><input type="text" placeholder="Ketik nama panggilan/username..." required className={inputClass} value={formData.username} onChange={e=>setFormData({...formData, username: e.target.value})}/></div>
                                     <div><Label icon="ph-hash">UID Sistem (Wajib Angka)</Label><input type="text" placeholder="Contoh: 8371928" required className={inputClass} value={formData.uid} onChange={e=>setFormData({...formData, uid: e.target.value})}/></div>
                                 </div>
