@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, Badge, ProgressBar } from './UI';
-import { SCRIPT_URL, formatToDDMMYYYY } from '../utils';
+import React, { useState, useEffect } from 'react';
+// Pastikan path import ini sesuai dengan struktur folder Anda
+import { SCRIPT_URL, formatToDDMMYYYY } from '../utils'; 
 
 export const ExecutiveDashboard = ({authUser}) => {
     const [stats, setStats] = useState({ total: 0, pending: 0, active: 0, failed: 0, recruiters: 0, thisWeek: 0 });
@@ -77,6 +77,7 @@ export const ExecutiveDashboard = ({authUser}) => {
         const fetchDashboardStats = async (showLoading = false) => {
             if (showLoading) setIsLoading(true);
             try {
+                // Fetch Users untuk Recruiter Aktif
                 const resUsers = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getUsers' }) });
                 const dataUsers = await resUsers.json();
                 let activeRecruiters = 0; 
@@ -85,12 +86,20 @@ export const ExecutiveDashboard = ({authUser}) => {
                     activeRecruiters = safeUsers.filter(u => u.role === 'Staff' && (u.status === 'Aktif' || u.status === 'Online')).length; 
                 }
 
+                // Fetch Daily Data
                 const resData = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getDailyData', role: authUser ? authUser.role : null, username: authUser ? authUser.username : null, name: authUser ? authUser.name : null }) });
                 const resultData = await resData.json();
 
                 if (resultData && resultData.status === 'success' && isMounted) {
-                    let filteredData = Array.isArray(resultData.data) ? resultData.data : [];
+                    let rawData = Array.isArray(resultData.data) ? resultData.data : [];
                     
+                    // --- PERBAIKAN DI SINI: SANITASI DATA ---
+                    // Membuang baris kosong atau data yang tidak memiliki field penting seperti 'tanggal'
+                    let filteredData = rawData.filter(d => {
+                        return d && Object.keys(d).length > 0 && d.tanggal && String(d.tanggal).trim() !== '';
+                    });
+                    
+                    // Filter berdasarkan Role User yang sedang login
                     if (!isPrivileged && authUser) {
                         filteredData = filteredData.filter(d => d.recruiter === authUser.username || d.recruiter === authUser.name);
                     }
@@ -98,6 +107,8 @@ export const ExecutiveDashboard = ({authUser}) => {
                     const thisWeekMonday = getOffsetMondayStr(0); 
                     const today = new Date(); 
                     today.setHours(0,0,0,0);
+                    
+                    // Perhitungan total sekarang menggunakan filteredData yang sudah bersih
                     let sTotal = filteredData.length, sPending = 0, sActive = 0, sFailed = 0, sThisWeek = 0, aHighRisk = 0, aMediumRisk = 0; 
 
                     filteredData.forEach(d => {
@@ -105,6 +116,7 @@ export const ExecutiveDashboard = ({authUser}) => {
                         if (d.results === 'Acc') sActive++; 
                         if (d.results === 'Reject') sFailed++;
                         if (getMondayStr(d.tanggal) === thisWeekMonday) sThisWeek++;
+                        
                         if (d.results === 'Pending' && d.tanggal) {
                             const inputDate = new Date(d.tanggal);
                             if (!isNaN(inputDate.getTime())) {
@@ -114,6 +126,7 @@ export const ExecutiveDashboard = ({authUser}) => {
                             }
                         }
                     });
+                    
                     setStats({ total: sTotal, pending: sPending, active: sActive, failed: sFailed, recruiters: activeRecruiters, thisWeek: sThisWeek });
                     setAlerts({ highRisk: aHighRisk, mediumRisk: aMediumRisk });
                 } else if (resultData && resultData.status !== 'success') {
@@ -211,7 +224,7 @@ export const ExecutiveDashboard = ({authUser}) => {
                 </div>
             </div>
 
-            {/* Grid Kartu Statistik (2 kolom di HP, 3 di Tablet, 6 di Laptop) */}
+            {/* Grid Kartu Statistik */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
                 {statCards.map((card, idx) => (
                     <div key={idx} className="relative group overflow-hidden rounded-xl sm:rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
@@ -222,7 +235,6 @@ export const ExecutiveDashboard = ({authUser}) => {
                             </div>
                         )}
                         
-                        {/* Garis Aksen Atas */}
                         <div className={`absolute top-0 left-0 w-full h-1 sm:h-1.5 bg-gradient-to-r ${card.grad}`}></div>
                         
                         <div className="p-3 sm:p-4 lg:p-5 flex flex-col justify-between h-full relative z-10">
@@ -245,10 +257,10 @@ export const ExecutiveDashboard = ({authUser}) => {
                 ))}
             </div>
 
-            {/* Bagian Bawah: Funnel & Alerts (Menumpuk di HP, Sebelahan di Laptop) */}
+            {/* Bagian Bawah: Funnel & Alerts */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                 
-                {/* Recruitment Funnel Card (Responsive Widths) */}
+                {/* Recruitment Funnel Card */}
                 <div className="lg:col-span-2 relative bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl border border-gray-100 dark:border-gray-700 shadow-lg overflow-hidden flex flex-col min-h-[300px]">
                     <div className="absolute -top-16 -right-16 sm:-top-24 sm:-right-24 w-48 h-48 sm:w-64 sm:h-64 bg-indigo-500/10 dark:bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
                     
@@ -274,10 +286,9 @@ export const ExecutiveDashboard = ({authUser}) => {
                             </span>
                         </div>
 
-                        {/* Implementasi Funnel dengan Flex dan Persentase Lebar agar aman di Layar HP */}
                         <div className="space-y-5 sm:space-y-6 flex-1 flex flex-col justify-center">
                             
-                            {/* Step 1: Leads (100% Width) */}
+                            {/* Step 1: Leads */}
                             <div className="w-full group">
                                 <div className="flex justify-between items-end text-[10px] sm:text-xs lg:text-sm mb-1.5 sm:mb-2">
                                     <span className="font-bold text-gray-700 dark:text-gray-300 flex items-center flex-wrap">
@@ -294,9 +305,8 @@ export const ExecutiveDashboard = ({authUser}) => {
                                 </div>
                             </div>
 
-                            {/* Step 2: Proses (90% Width, geser 10% dari kiri) */}
+                            {/* Step 2: Proses */}
                             <div className="w-[90%] sm:w-[92%] ml-[10%] sm:ml-[8%] group relative">
-                                {/* Garis penghubung visual */}
                                 <div className="absolute -left-3 sm:-left-4 lg:-left-6 top-1/2 -translate-y-1/2 w-2.5 sm:w-3 lg:w-5 border-t-2 border-dashed border-gray-200 dark:border-gray-700"></div>
                                 
                                 <div className="flex justify-between items-end text-[10px] sm:text-xs lg:text-sm mb-1.5 sm:mb-2 border-l-2 border-dashed border-gray-200 dark:border-gray-700 pl-3 sm:pl-4 lg:pl-6 -ml-3 sm:-ml-4 lg:-ml-6">
@@ -314,7 +324,7 @@ export const ExecutiveDashboard = ({authUser}) => {
                                 </div>
                             </div>
 
-                            {/* Step 3: Diterima (80% Width, geser 20% dari kiri) */}
+                            {/* Step 3: Diterima */}
                             <div className="w-[80%] sm:w-[84%] ml-[20%] sm:ml-[16%] group relative">
                                 <div className="absolute -left-3 sm:-left-4 lg:-left-6 top-1/2 -translate-y-1/2 w-2.5 sm:w-3 lg:w-5 border-t-2 border-dashed border-gray-200 dark:border-gray-700"></div>
                                 
@@ -337,7 +347,7 @@ export const ExecutiveDashboard = ({authUser}) => {
                     </div>
                 </div>
 
-                {/* Follow Up Alerts Card (Batasi tinggi di HP agar tidak makan layar penuh) */}
+                {/* Follow Up Alerts Card */}
                 <div className="relative bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl border border-gray-100 dark:border-gray-700 shadow-lg overflow-hidden flex flex-col max-h-[350px] lg:max-h-none">
                     <div className="absolute top-0 right-0 w-full h-1.5 sm:h-2 bg-gradient-to-r from-rose-500 to-amber-500"></div>
                     
