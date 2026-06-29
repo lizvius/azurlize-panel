@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 interface WorkflowStep {
     id: string;
@@ -18,41 +18,25 @@ interface LandingPageProps {
     onToggleDark: () => void;
 }
 
+// Data manual (hardcoded)
+const landingData = {
+    heroTitle: "AzurLize Recruitment & Performance Hub",
+    heroSubtitle: "Sistem terpadu untuk koordinasi, evaluasi, dan rekapitulasi performa tim recruiter AzurLize secara real-time. Kelola target harian dan optimalkan efisiensi kerja tim dalam satu platform modern.",
+    steps: [
+        { id: "1", title: "Promosi & Pencarian", desc: "Mencari dan menjaring kandidat baru melalui berbagai platform media sosial seperti Instagram, TikTok, WhatsApp, dll." },
+        { id: "2", title: "Pelaporan Harian", desc: "Melaporkan data pelamar, postingan, kunjungan, dan pengujian harian secara mandiri sebelum batas waktu pelaporan." },
+        { id: "3", title: "Validasi Laporan (Acc)", desc: "Superadmin & Admin memvalidasi data pelamar yang masuk, menandai data yang Acc, serta mengunci laporan kerja." },
+        { id: "4", title: "Evaluasi & Payroll", desc: "Sistem menghitung otomatis denda keterlambatan lapor, denda missed-target, insentif harian, serta akumulasi bonus bulanan." }
+    ],
+    images: [
+        { id: "img1", url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80", title: "Kolaborasi Tim Recruiter" },
+        { id: "img2", url: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80", title: "Analisis Target Bulanan" }
+    ]
+};
+
 export const LandingPage = ({ onOpenAuth, isDark, onToggleDark }: LandingPageProps) => {
     const [showWorkflowWizard, setShowWorkflowWizard] = useState(false);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
-
-    const [landingData, setLandingData] = useState<any>(() => {
-        try {
-            const saved = localStorage.getItem('recruitOps_landing_data_v2');
-            if (saved) return JSON.parse(saved);
-        } catch (e) {}
-        return {
-            heroTitle: "AzurLize Recruitment & Performance Hub",
-            heroSubtitle: "Sistem terpadu untuk koordinasi, evaluasi, dan rekapitulasi performa tim recruiter AzurLize secara real-time. Kelola target harian dan optimalkan efisiensi kerja tim dalam satu platform modern.",
-            steps: [
-                { id: "1", title: "Promosi & Pencarian", desc: "Mencari dan menjaring kandidat baru melalui berbagai platform media sosial seperti Instagram, TikTok, WhatsApp, dll." },
-                { id: "2", title: "Pelaporan Harian", desc: "Melaporkan data pelamar, postingan, kunjungan, dan pengujian harian secara mandiri sebelum batas waktu pelaporan." },
-                { id: "3", title: "Validasi Laporan (Acc)", desc: "Superadmin & Admin memvalidasi data pelamar yang masuk, menandai data yang Acc, serta mengunci laporan kerja." },
-                { id: "4", title: "Evaluasi & Payroll", desc: "Sistem menghitung otomatis denda keterlambatan lapor, denda missed-target, insentif harian, serta akumulasi bonus bulanan." }
-            ],
-            images: [
-                { id: "img1", url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80", title: "Kolaborasi Tim Recruiter" },
-                { id: "img2", url: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80", title: "Analisis Target Bulanan" }
-            ]
-        };
-    });
-
-    useEffect(() => {
-        const handleLandingUpdate = () => {
-            try {
-                const saved = localStorage.getItem('recruitOps_landing_data_v2');
-                if (saved) setLandingData(JSON.parse(saved));
-            } catch (e) {}
-        };
-        window.addEventListener('landingUpdated', handleLandingUpdate);
-        return () => window.removeEventListener('landingUpdated', handleLandingUpdate);
-    }, []);
 
     const openWizardAt = (index: number) => {
         setCurrentStepIndex(index);
@@ -113,7 +97,7 @@ export const LandingPage = ({ onOpenAuth, isDark, onToggleDark }: LandingPagePro
                     <div className="w-full flex justify-start mb-8">
                         <button 
                             onClick={() => setShowWorkflowWizard(false)}
-                            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
                         >
                             <i className="ph-bold ph-arrow-left"></i> Kembali ke Beranda
                         </button>
