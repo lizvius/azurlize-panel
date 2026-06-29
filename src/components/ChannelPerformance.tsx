@@ -209,7 +209,11 @@ export const ChannelPerformance = ({ authUser }) => {
                                             </div>
 
                                             <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-lg sm:text-xl text-white shrink-0 shadow-sm ${style.avatarBg}`}>
-                                                {staff.fullName ? staff.fullName.charAt(0).toUpperCase() : <i className="ph-bold ph-user"></i>}
+                                                {(staff.fullName && typeof staff.fullName === 'string' && staff.fullName.trim() !== '') 
+                                                    ? staff.fullName.charAt(0).toUpperCase() 
+                                                    : (staff.username && typeof staff.username === 'string' && staff.username.trim() !== '')
+                                                        ? staff.username.charAt(0).toUpperCase()
+                                                        : <i className="ph-bold ph-user"></i>}
                                             </div>
 
                                             <div className="min-w-0 flex-1 ml-1">

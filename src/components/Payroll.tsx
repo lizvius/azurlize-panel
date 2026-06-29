@@ -392,7 +392,13 @@ export const Payroll = ({ authUser }) => {
                                 <div key={i} className={`bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-2xl p-4 sm:p-5 border relative overflow-hidden shadow-sm ${rank === 1 ? 'border-amber-300 dark:border-amber-700/50 shadow-amber-500/10' : 'border-gray-200/80 dark:border-gray-700/60'}`}>
                                     <div className={`absolute top-0 right-0 px-3 py-1 text-[10px] font-black text-white rounded-bl-xl shadow-sm ${rank === 1 ? 'bg-gradient-to-r from-amber-500 to-orange-400' : rank === 2 ? 'bg-gray-400' : 'bg-amber-700'}`}>Rank #{rank}</div>
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl text-white shadow-sm border border-white/20 ${uStyle.bg}`}>{d.fullName.charAt(0).toUpperCase()}</div>
+                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl text-white shadow-sm border border-white/20 ${uStyle.bg}`}>
+                                            {(d.fullName && typeof d.fullName === 'string' && d.fullName.trim() !== '') 
+                                                ? d.fullName.charAt(0).toUpperCase() 
+                                                : (d.username && typeof d.username === 'string' && d.username.trim() !== '')
+                                                    ? d.username.charAt(0).toUpperCase()
+                                                    : <i className="ph-bold ph-user"></i>}
+                                        </div>
                                         <div className="min-w-0">
                                             <div className="font-black text-sm text-gray-900 dark:text-white truncate">{d.fullName}</div>
                                             <div className="text-[10px] font-bold text-gray-500">Tingkat Gaji: <span className="text-indigo-500 font-black">Level {d.levelGaji || 0}</span></div>
@@ -483,7 +489,13 @@ export const Payroll = ({ authUser }) => {
                                         </div>
                                     )}
                                     <div className="flex items-start mb-4">
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg text-white shadow-sm shrink-0 border border-white/10 ${uStyle.bg}`}>{d.fullName.charAt(0).toUpperCase()}</div>
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg text-white shadow-sm shrink-0 border border-white/10 ${uStyle.bg}`}>
+                                            {(d.fullName && typeof d.fullName === 'string' && d.fullName.trim() !== '') 
+                                                ? d.fullName.charAt(0).toUpperCase() 
+                                                : (d.username && typeof d.username === 'string' && d.username.trim() !== '')
+                                                    ? d.username.charAt(0).toUpperCase()
+                                                    : <i className="ph-bold ph-user"></i>}
+                                        </div>
                                         <div className="ml-3 mt-0.5">
                                             <div className="font-black text-sm text-gray-900 dark:text-white flex items-center gap-1.5"><i className={`${uStyle.icon} text-[10px] ${uStyle.text}`}></i> {d.fullName}</div>
                                             <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1.5 mt-0.5"><i className="ph-bold ph-calendar-blank"></i> {formatToDDMMYYYY(d.periode)}</div>
@@ -561,7 +573,13 @@ export const Payroll = ({ authUser }) => {
                                             <td className="px-5 py-3 relative">
                                                 {isPrivileged && d.status === 'Draft' && <div className="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>}
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm text-white shadow-sm shrink-0 ${uStyle.bg}`}>{d.fullName.charAt(0).toUpperCase()}</div>
+                                                    <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm text-white shadow-sm shrink-0 ${uStyle.bg}`}>
+                                                        {(d.fullName && typeof d.fullName === 'string' && d.fullName.trim() !== '') 
+                                                            ? d.fullName.charAt(0).toUpperCase() 
+                                                            : (d.username && typeof d.username === 'string' && d.username.trim() !== '')
+                                                                ? d.username.charAt(0).toUpperCase()
+                                                                : <i className="ph-bold ph-user"></i>}
+                                                    </div>
                                                     <div>
                                                         <div className="font-black text-sm text-gray-900 dark:text-white flex items-center gap-1.5"><i className={`${uStyle.icon} text-[10px] ${uStyle.text}`}></i> {d.fullName}</div>
                                                         <div className="text-[10px] text-gray-400 font-mono mt-0.5">{d.uid} | {formatToDDMMYYYY(d.periode)}</div>

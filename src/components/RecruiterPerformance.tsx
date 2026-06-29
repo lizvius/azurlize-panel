@@ -141,7 +141,11 @@ export const RecruiterPerformance = ({ authUser }) => {
                         const rank = i + 1;
                         const isTopThree = rank <= 3;
                         const style = getRoleStyle(staff.role);
-                        const initialLetter = (staff.fullName && staff.fullName.trim() !== '') ? staff.fullName.charAt(0).toUpperCase() : <i className="ph-bold ph-user"></i>;
+                        const initialLetter = (staff.fullName && typeof staff.fullName === 'string' && staff.fullName.trim() !== '') 
+                            ? staff.fullName.charAt(0).toUpperCase() 
+                            : (staff.username && typeof staff.username === 'string' && staff.username.trim() !== '')
+                                ? staff.username.charAt(0).toUpperCase()
+                                : <i className="ph-bold ph-user"></i>;
 
                         return (
                             <div key={i} className={`bg-white dark:bg-[#151a23] backdrop-blur-xl border rounded-[24px] p-6 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group ${isTopThree ? 'border-amber-200 dark:border-amber-900/40' : 'border-gray-200/80 dark:border-gray-700/60 hover:' + style.borderGlow}`}>

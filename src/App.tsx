@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Login, Register } from './components/Auth';
 import { ExecutiveDashboard } from './components/ExecutiveDashboard';
-import { AnnouncementCenter } from './components/AnnouncementCenter';
-import { FollowUpCenter } from './components/FollowUpCenter';
 import { RecruiterPerformance } from './components/RecruiterPerformance';
 import { RecruitmentGoals } from './components/RecruitmentGoals';
 import { ChannelPerformance } from './components/ChannelPerformance';
@@ -12,9 +11,6 @@ import { Payroll } from './components/Payroll';
 import { UserManagement } from './components/UserManagement';
 import { SystemSettings } from './components/SystemSettings';
 import { InstallPWA } from './components/InstallPWA';
-import { BannerGenerator } from './components/BannerGenerator';
-import { LandingPage } from './components/LandingPage';
-import { SuperadminTools } from './components/SuperadminTools';
 import { getSavedPermissions } from './utils';
 
 export default function App() {
@@ -26,13 +22,12 @@ export default function App() {
             return null;
         }
     });
-    const [authView, setAuthView] = useState('landing');
+    const [authView, setAuthView] = useState('login');
     const [activeTab, setActiveTab] = useState('dashboard');
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [isDark, setIsDark] = useState(() => localStorage.getItem('recruitOps_theme') === 'dark');
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
     const [isCheckingSession, setIsCheckingSession] = useState(true);
-    const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
     const [lastSynced, setLastSynced] = useState<Date>(new Date());
     const [isSyncingGlobal, setIsSyncingGlobal] = useState(false);
     const [permissions, setPermissions] = useState(() => getSavedPermissions());
@@ -52,6 +47,80 @@ export default function App() {
             setLastSynced(new Date());
             setIsSyncingGlobal(false);
         }, 1000);
+    };
+
+    const [pullDistance, setPullDistance] = useState(0);
+    const [pullStatus, setPullStatus] = useState<'idle' | 'pull' | 'release' | 'refreshing'>('idle');
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const touchStartRef = React.useRef<{ y: number; x: number } | null>(null);
+    const isPullingRef = React.useRef(false);
+
+    useEffect(() => {
+        if (!isSyncingGlobal && pullStatus === 'refreshing') {
+            setPullStatus('idle');
+            setPullDistance(0);
+        }
+    }, [isSyncingGlobal, pullStatus]);
+
+    const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+        if (pullStatus === 'refreshing') return;
+        const container = containerRef.current;
+        if (!container) return;
+
+        if (container.scrollTop === 0) {
+            const touch = e.touches[0];
+            touchStartRef.current = { y: touch.clientY, x: touch.clientX };
+            isPullingRef.current = true;
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+        if (!isPullingRef.current || !touchStartRef.current || pullStatus === 'refreshing') return;
+
+        const touch = e.touches[0];
+        const diffY = touch.clientY - touchStartRef.current.y;
+        const diffX = touch.clientX - touchStartRef.current.x;
+
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            isPullingRef.current = false;
+            setPullDistance(0);
+            setPullStatus('idle');
+            return;
+        }
+
+        if (diffY > 0) {
+            const resistance = 0.4;
+            const distance = Math.min(diffY * resistance, 80);
+            setPullDistance(distance);
+            
+            if (distance >= 50) {
+                setPullStatus('release');
+            } else {
+                setPullStatus('pull');
+            }
+
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+        } else {
+            setPullDistance(0);
+            setPullStatus('idle');
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (!isPullingRef.current) return;
+        isPullingRef.current = false;
+        touchStartRef.current = null;
+
+        if (pullStatus === 'release') {
+            setPullStatus('refreshing');
+            setPullDistance(50);
+            triggerGlobalSync();
+        } else {
+            setPullDistance(0);
+            setPullStatus('idle');
+        }
     };
 
     useEffect(() => {
@@ -112,10 +181,10 @@ export default function App() {
         // Check if the current tab is allowed, otherwise redirect to the first allowed tab
         if (!isCurrentAllowed) {
             const tabsOrder = [
-                'dashboard', 'announcement', 'follow_up', 
+                'dashboard', 
                 'performance', 'goals', 'channels', 
                 'daily_data', 'daily_stats', 'payroll', 'users', 
-                'settings', 'superadmin_tools'
+                'settings'
             ];
             const firstAllowed = tabsOrder.find(t => getHasAccess(t));
             if (firstAllowed) {
@@ -123,7 +192,7 @@ export default function App() {
             }
         } else if (activeTab === 'dashboard' && authUser.role === 'Staff' && !getHasAccess('dashboard')) {
             // Special edge case where staff lands on dashboard initially before effect can run
-            const tabsOrder = ['daily_stats', 'announcement', 'daily_data', 'follow_up'];
+            const tabsOrder = ['daily_stats', 'daily_data'];
             const firstAllowed = tabsOrder.find(t => getHasAccess(t));
             if (firstAllowed) setActiveTab(firstAllowed);
         }
@@ -134,8 +203,6 @@ export default function App() {
         
         const listeners: Record<string, () => void> = {
             openDashboard: changeTab("dashboard"),
-            openAnnouncement: changeTab("announcement"),
-            openFollowUp: changeTab("follow_up"),
             openPerformance: changeTab("performance"),
             openGoals: changeTab("goals"),
             openChannels: changeTab("channels"),
@@ -157,28 +224,6 @@ export default function App() {
         };
     }, []);
 
-    useEffect(() => {
-        const checkUnread = () => {
-            if (!authUser) return;
-            try {
-                const savedPosts = localStorage.getItem('recruitOps_announcements');
-                const savedReads = localStorage.getItem(`recruitOps_read_${authUser.username}`);
-                
-                if (savedPosts) {
-                    const posts = JSON.parse(savedPosts);
-                    const readPosts = savedReads ? JSON.parse(savedReads) : [];
-                    
-                    const unreadCount = posts.filter((p: any) => !readPosts.includes(p.id)).length;
-                    setUnreadAnnouncements(unreadCount);
-                }
-            } catch (e) {}
-        };
-        
-        checkUnread(); 
-        const intv = setInterval(checkUnread, 1000); 
-        return () => clearInterval(intv);
-    }, [authUser]);
-
     const login = (user: any) => { 
         let validRole = user.role ? user.role.toString().trim() : 'Staff'; 
         validRole = validRole.charAt(0).toUpperCase() + validRole.slice(1).toLowerCase(); 
@@ -187,7 +232,7 @@ export default function App() {
         setAuthUser(finalUser); 
         localStorage.setItem('recruitOps_session', JSON.stringify(finalUser)); 
     };
-    
+
     const logout = () => { 
         setAuthUser(null); 
         localStorage.removeItem('recruitOps_session'); 
@@ -203,17 +248,10 @@ export default function App() {
     
     if (!authUser) return (
         <div className={isDark ? 'dark' : ''}>
-            {authView === 'landing' ? (
-                <LandingPage 
-                    onOpenAuth={(view: any) => setAuthView(view)} 
-                    isDark={isDark} 
-                    onToggleDark={() => setIsDark(!isDark)} 
-                />
-            ) : authView === 'login' ? (
+            {authView === 'login' ? (
                 <Login 
                     onLogin={login} 
                     onNavigateRegister={() => setAuthView('register')} 
-                    onBack={() => setAuthView('landing')} 
                     isDark={isDark} 
                     onToggleDark={() => setIsDark(!isDark)} 
                 />
@@ -221,7 +259,6 @@ export default function App() {
                 <Register 
                     onRegister={login} 
                     onNavigateLogin={() => setAuthView('login')} 
-                    onBack={() => setAuthView('login')} 
                     isDark={isDark} 
                     onToggleDark={() => setIsDark(!isDark)} 
                 />
@@ -231,9 +268,7 @@ export default function App() {
 
     const NAVIGATION = [
         { s: 'Overview', allowed: ['Superadmin', 'Admin', 'Staff'], items: [
-            { id: 'dashboard', l: 'Dashboard', i: 'ph-squares-four', roles: permissions.dashboard?.view || ['Superadmin', 'Admin', 'Staff'] }, 
-            { id: 'announcement', l: 'Pemberitahuan Dan Chat', i: 'ph-megaphone', roles: permissions.announcement?.view || ['Superadmin', 'Admin', 'Staff'], badge: unreadAnnouncements }, 
-            { id: 'follow_up', l: 'Follow Up', i: 'ph-bell-ringing', roles: permissions.follow_up?.view || ['Superadmin', 'Admin', 'Staff'] }
+            { id: 'dashboard', l: 'Dashboard', i: 'ph-squares-four', roles: permissions.dashboard?.view || ['Superadmin', 'Admin', 'Staff'] }
         ] },
         { s: 'Performance', allowed: ['Superadmin', 'Admin', 'Staff'], items: [
             { id: 'performance', l: 'Recruiter Performance', i: 'ph-medal', roles: permissions.performance?.view || ['Superadmin', 'Admin', 'Staff'] }, 
@@ -247,8 +282,7 @@ export default function App() {
             { id: 'users', l: 'User Accounts', i: 'ph-user-gear', roles: permissions.users?.view || ['Superadmin', 'Admin', 'Staff'] }
         ] },
         { s: 'System', allowed: ['Superadmin'], items: [
-            { id: 'settings', l: 'Settings', i: 'ph-gear', roles: permissions.settings?.view || ['Superadmin'] },
-            { id: 'superadmin_tools', l: 'Superadmin Tools', i: 'ph-shield-check', roles: ['Superadmin'] }
+            { id: 'settings', l: 'Settings', i: 'ph-gear', roles: permissions.settings?.view || ['Superadmin'] }
         ] }
     ].map(sec => ({
         ...sec,
@@ -263,40 +297,55 @@ export default function App() {
             const hasAccess = permissions[activeTab].view.map((r: string) => r.toLowerCase()).includes(authUser.role.toLowerCase());
             if (!hasAccess) {
                 return (
-                    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                    <motion.div 
+                        key="access-denied"
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -15 }}
+                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                        className="flex flex-col items-center justify-center py-16 px-4 text-center"
+                    >
                         <div className="w-16 h-16 bg-red-50 dark:bg-red-950/40 rounded-2xl flex items-center justify-center text-red-500 mb-4 border border-red-100 dark:border-red-900/30">
                             <i className="ph-bold ph-shield-warning text-3xl"></i>
                         </div>
                         <h3 className="text-lg font-black text-gray-900 dark:text-white mb-1">Akses Ditolak</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">Anda tidak memiliki hak akses untuk melihat menu "{permissions[activeTab].name}". Hubungi Superadmin jika ini adalah kesalahan.</p>
-                    </div>
+                    </motion.div>
                 );
             }
         }
 
+        let content;
         switch(activeTab) {
-            case 'dashboard': return <ExecutiveDashboard authUser={authUser} />;
-            case 'announcement': return <AnnouncementCenter authUser={authUser} />;
-            case 'follow_up': return <FollowUpCenter authUser={authUser} />;
-            case 'performance': return <RecruiterPerformance authUser={authUser} />;
-            case 'goals': return <RecruitmentGoals authUser={authUser} />;
-            case 'channels': return <ChannelPerformance authUser={authUser} />;
-            case 'daily_data': return <DailyData authUser={authUser} />;
-            case 'daily_stats': return <DailyStats authUser={authUser} />;
-            case 'payroll': return <Payroll authUser={authUser} />;
-            case 'users': return <UserManagement authUser={authUser} />;
-            case 'settings': return <SystemSettings />;
-            case 'superadmin_tools': return <SuperadminTools authUser={authUser} />;
-            default: return <ExecutiveDashboard authUser={authUser} />;
+            case 'dashboard': content = <ExecutiveDashboard authUser={authUser} />; break;
+            case 'performance': content = <RecruiterPerformance authUser={authUser} />; break;
+            case 'goals': content = <RecruitmentGoals authUser={authUser} />; break;
+            case 'channels': content = <ChannelPerformance authUser={authUser} />; break;
+            case 'daily_data': content = <DailyData authUser={authUser} />; break;
+            case 'daily_stats': content = <DailyStats authUser={authUser} />; break;
+            case 'payroll': content = <Payroll authUser={authUser} />; break;
+            case 'users': content = <UserManagement authUser={authUser} />; break;
+            case 'settings': content = <SystemSettings />; break;
+            default: content = <ExecutiveDashboard authUser={authUser} />; break;
         }
+
+        return (
+            <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.25, ease: 'easeInOut' }}
+            >
+                {content}
+            </motion.div>
+        );
     };
 
     const bottomNavItems = [
         ...(authUser.role !== 'Staff' ? [{ id: 'dashboard', label: 'Home', icon: 'ph-house' }] : []), 
-        { id: 'announcement', label: 'Comm', icon: 'ph-megaphone', badge: unreadAnnouncements }, 
         { id: 'daily_data', label: 'Input', icon: 'ph-address-book' }, 
-        { id: 'daily_stats', label: 'Stats', icon: 'ph-chart-bar' }, 
-        { id: 'follow_up', label: 'Follow', icon: 'ph-bell-ringing' }
+        { id: 'daily_stats', label: 'Stats', icon: 'ph-chart-bar' }
     ].filter(item => {
         const itemConfig = permissions[item.id];
         if (!itemConfig) return true;
@@ -377,13 +426,13 @@ export default function App() {
                                                 </div>
                                                 
                                                 {/* Badges */}
-                                                {item.badge > 0 && (
+                                                {(item as any).badge > 0 && (
                                                     <span className={`absolute right-3 z-10 text-[10px] px-2 py-0.5 rounded-full font-black shadow-sm flex items-center justify-center min-w-[20px] ${
                                                         isActive 
                                                         ? 'bg-white text-indigo-600' 
                                                         : 'bg-rose-500 text-white animate-pulse'
                                                     }`}>
-                                                        {item.badge > 99 ? '99+' : item.badge}
+                                                        {(item as any).badge > 99 ? '99+' : (item as any).badge}
                                                     </span>
                                                 )}
                                             </button>
@@ -398,7 +447,7 @@ export default function App() {
                     <div className="p-4 mx-4 mb-4 mt-2 border border-gray-200/80 dark:border-gray-700/80 rounded-2xl bg-white/50 dark:bg-[#1a202c]/50 backdrop-blur-md shadow-sm flex items-center justify-between group hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-colors">
                         <div className="flex items-center min-w-0 flex-1">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg text-white shrink-0 shadow-md ${roleStyle.avatarBg} relative`}>
-                                {authUser.name ? authUser.name.charAt(0).toUpperCase() : 'U'}
+                                {authUser.name && typeof authUser.name === 'string' ? authUser.name.charAt(0).toUpperCase() : 'U'}
                                 <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
                             </div>
                             <div className="ml-3 min-w-0 pr-2">
@@ -414,21 +463,21 @@ export default function App() {
 
                 <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative pb-24 lg:pb-0">
                     {/* Modern Top Header */}
-                    <header className="h-20 bg-white/70 dark:bg-[#0B0F19]/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 flex items-center justify-between px-4 sm:px-6 lg:px-10 z-10 shrink-0 sticky top-0">
-                        <div className="flex items-center min-w-0 mr-2">
+                    <header className="h-20 bg-white/70 dark:bg-[#0B0F19]/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 flex items-center justify-between px-4 sm:px-5 md:px-6 lg:px-10 z-10 shrink-0 sticky top-0">
+                        <div className="flex items-center min-w-0 flex-1 mr-3 sm:mr-6">
                             {isMobile && (
-                                <button onClick={()=>setSidebarOpen(true)} className="mr-3 text-gray-500 hover:text-indigo-600 bg-gray-100 dark:bg-gray-800 w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm shrink-0">
+                                <button onClick={()=>setSidebarOpen(true)} className="mr-3 sm:mr-4 text-gray-500 hover:text-indigo-600 bg-gray-100 dark:bg-gray-800 w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm shrink-0">
                                     <i className="ph-bold ph-list text-xl"></i>
                                 </button>
                             )}
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                                 <h1 className="text-base sm:text-xl md:text-2xl font-black text-gray-900 dark:text-white tracking-tight truncate">{pageTitle}</h1>
                                 <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-widest hidden sm:block mt-0.5">AzurLize Management System</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-                            {/* Visual Sync Status (hidden on very small phones, beautiful on tablet & desktop) */}
-                            <div className="flex flex-col items-end mr-1 font-bold text-gray-400 dark:text-gray-500 leading-tight">
+                            {/* Visual Sync Status (hidden on mobile, beautiful on tablet & desktop) */}
+                            <div className="hidden sm:flex flex-col items-end mr-1 font-bold text-gray-400 dark:text-gray-500 leading-tight">
                                 <span className="text-[8px] uppercase tracking-wider text-gray-400 dark:text-gray-500 select-none hidden md:inline">Auto Sync</span>
                                 <span className="text-emerald-500 dark:text-emerald-400 flex items-center gap-1 text-[10px] sm:text-xs">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -447,9 +496,53 @@ export default function App() {
                         </div>
                     </header>
                     
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 custom-scrollbar">
-                        <div className="max-w-[1400px] mx-auto pb-6 print:pb-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            {renderPageContent()}
+                    <div 
+                        ref={containerRef}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 custom-scrollbar relative"
+                    >
+                        {/* Pull To Refresh Indicator */}
+                        <AnimatePresence>
+                            {pullDistance > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ 
+                                        opacity: 1, 
+                                        height: pullDistance,
+                                        y: 0
+                                    }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ type: 'spring', damping: 25, stiffness: 250 }}
+                                    className="w-full overflow-hidden flex items-center justify-center pointer-events-none mb-2 shrink-0 select-none"
+                                >
+                                    <div className="flex items-center gap-2.5 px-4 py-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-full shadow-md border border-gray-100 dark:border-gray-700/40 text-gray-600 dark:text-gray-300">
+                                        <div className="flex items-center justify-center">
+                                            {pullStatus === 'refreshing' ? (
+                                                <i className="ph-bold ph-spinner ph-spin text-lg text-indigo-500 animate-spin"></i>
+                                            ) : (
+                                                <i 
+                                                    className={`ph-bold ph-arrow-down text-lg text-indigo-500 transition-transform duration-300 ${
+                                                        pullStatus === 'release' ? 'rotate-180' : ''
+                                                    }`}
+                                                ></i>
+                                            )}
+                                        </div>
+                                        <span className="text-xs font-black tracking-wide">
+                                            {pullStatus === 'pull' && 'Tarik untuk menyegarkan...'}
+                                            {pullStatus === 'release' && 'Lepaskan untuk menyegarkan...'}
+                                            {pullStatus === 'refreshing' && 'Menyegarkan data...'}
+                                        </span>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        <div className="max-w-[1400px] mx-auto pb-6 print:pb-0">
+                            <AnimatePresence mode="wait">
+                                {renderPageContent()}
+                            </AnimatePresence>
                         </div>
                     </div>
                 </main>
@@ -475,9 +568,9 @@ export default function App() {
                                     <div className="relative z-10 flex flex-col items-center transition-transform duration-300 group-active:scale-95">
                                         <div className="relative">
                                             <i className={`${isActive ? 'ph-fill text-indigo-600 dark:text-indigo-400 scale-110 drop-shadow-sm' : 'ph-bold text-gray-400 dark:text-gray-500'} ${item.icon} text-[22px] transition-all duration-300`}></i>
-                                            {item.badge > 0 && (
+                                            {(item as any).badge > 0 && (
                                                 <span className="absolute -top-1.5 -right-2.5 bg-rose-500 text-white text-[9px] w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-white dark:border-[#1a202c] shadow-sm animate-bounce">
-                                                    {item.badge > 99 ? '!' : item.badge}
+                                                    {(item as any).badge > 99 ? '!' : (item as any).badge}
                                                 </span>
                                             )}
                                         </div>

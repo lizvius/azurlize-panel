@@ -228,10 +228,10 @@ export const UserManagement = ({ authUser }) => {
                             
                             <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                                 {displayPhoto ? (
-                                    <img src={displayPhoto} alt={u.name} className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shrink-0 shadow-sm border-2 ${st.imgBorder}`} />
+                                    <img src={displayPhoto} alt={typeof u.name === 'string' ? u.name : String(u.name || '')} className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shrink-0 shadow-sm border-2 ${st.imgBorder}`} />
                                 ) : (
                                     <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-lg sm:text-xl shrink-0 shadow-inner ${st.avatar}`}>
-                                        {u.name ? u.name.charAt(0).toUpperCase() : '?'}
+                                        {u.name && typeof u.name === 'string' ? u.name.charAt(0).toUpperCase() : (u.name && typeof u.name !== 'object' ? String(u.name).charAt(0).toUpperCase() : '?')}
                                     </div>
                                 )}
                                 
@@ -248,7 +248,7 @@ export const UserManagement = ({ authUser }) => {
                                             <path d={st.iconPath} fill={`url(#grad-${u.username})`} />
                                         </svg>
                                         
-                                        <span className="truncate max-w-[120px] sm:max-w-xs">{u.name || 'Unknown'}</span>
+                                        <span className="truncate max-w-[120px] sm:max-w-xs">{typeof u.name === 'string' ? u.name : (u.name && typeof u.name !== 'object' ? String(u.name) : 'Unknown')}</span>
 
                                         {newlyJoined && (
                                             <span className="px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-full text-[8px] sm:text-[9px] font-black bg-gradient-to-r from-rose-500 to-red-600 text-white animate-pulse shadow-[0_2px_10px_rgba(244,63,94,0.4)] border border-rose-400/50 uppercase tracking-widest shrink-0 flex items-center gap-1">

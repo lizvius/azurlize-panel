@@ -254,7 +254,11 @@ export const RecruitmentGoals = ({ authUser }) => {
                     const isDone = pct >= 100;
                     const style = getRoleStyle(staff.role);
                     
-                    const initialLetter = (staff.fullName && staff.fullName.trim() !== '') ? staff.fullName.charAt(0).toUpperCase() : <i className="ph-bold ph-user"></i>;
+                    const initialLetter = (staff.fullName && typeof staff.fullName === 'string' && staff.fullName.trim() !== '') 
+                        ? staff.fullName.charAt(0).toUpperCase() 
+                        : (staff.username && typeof staff.username === 'string' && staff.username.trim() !== '')
+                            ? staff.username.charAt(0).toUpperCase()
+                            : <i className="ph-bold ph-user"></i>;
 
                     return (
                         <div key={i} className="bg-white/90 dark:bg-[#151a23]/90 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/60 rounded-[24px] p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group">

@@ -20,8 +20,6 @@ export const getSavedPermissions = () => {
     } catch (e) {}
     return {
         dashboard: { name: 'Dashboard', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
-        announcement: { name: 'Pemberitahuan Dan Chat', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
-        follow_up: { name: 'Follow Up', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin', 'Staff'] },
         performance: { name: 'Recruiter Performance', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
         goals: { name: 'Recruitment Goals', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
         channels: { name: 'Channel Performance', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
