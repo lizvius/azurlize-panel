@@ -11,6 +11,7 @@ import { Payroll } from './components/Payroll';
 import { UserManagement } from './components/UserManagement';
 import { SystemSettings } from './components/SystemSettings';
 import { InstallPWA } from './components/InstallPWA';
+import { AIContentStudio } from './components/AIContentStudio';
 import { getSavedPermissions } from './utils';
 
 export default function App() {
@@ -270,6 +271,9 @@ export default function App() {
         { s: 'Overview', allowed: ['Superadmin', 'Admin', 'Staff'], items: [
             { id: 'dashboard', l: 'Dashboard', i: 'ph-squares-four', roles: permissions.dashboard?.view || ['Superadmin', 'Admin', 'Staff'] }
         ] },
+        { s: 'Studio', allowed: ['Superadmin', 'Admin', 'Staff'], items: [
+            { id: 'ai_content', l: 'AI Content Studio', i: 'ph-palette', roles: ['Superadmin', 'Admin', 'Staff'] }
+        ] },
         { s: 'Performance', allowed: ['Superadmin', 'Admin', 'Staff'], items: [
             { id: 'performance', l: 'Recruiter Performance', i: 'ph-medal', roles: permissions.performance?.view || ['Superadmin', 'Admin', 'Staff'] }, 
             { id: 'goals', l: 'Recruitment Goals', i: 'ph-target', roles: permissions.goals?.view || ['Superadmin', 'Admin', 'Staff'] }, 
@@ -318,6 +322,7 @@ export default function App() {
         let content;
         switch(activeTab) {
             case 'dashboard': content = <ExecutiveDashboard authUser={authUser} />; break;
+            case 'ai_content': content = <AIContentStudio authUser={authUser} />; break;
             case 'performance': content = <RecruiterPerformance authUser={authUser} />; break;
             case 'goals': content = <RecruitmentGoals authUser={authUser} />; break;
             case 'channels': content = <ChannelPerformance authUser={authUser} />; break;

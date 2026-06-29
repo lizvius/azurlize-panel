@@ -16,10 +16,18 @@ export const formatToDDMMYYYY = (dateStr: any) => {
 export const getSavedPermissions = () => {
     try {
         const saved = localStorage.getItem('recruitOps_permissions_v2');
-        if (saved) return JSON.parse(saved);
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (!parsed.ai_content) {
+                parsed.ai_content = { name: 'AI Content Studio', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin', 'Staff'] };
+                localStorage.setItem('recruitOps_permissions_v2', JSON.stringify(parsed));
+            }
+            return parsed;
+        }
     } catch (e) {}
     return {
         dashboard: { name: 'Dashboard', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
+        ai_content: { name: 'AI Content Studio', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin', 'Staff'] },
         performance: { name: 'Recruiter Performance', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
         goals: { name: 'Recruitment Goals', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
         channels: { name: 'Channel Performance', view: ['Superadmin', 'Admin', 'Staff'], edit: ['Superadmin', 'Admin'] },
