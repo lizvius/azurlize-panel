@@ -22,6 +22,35 @@ export const Payroll = ({ authUser }) => {
 
     const isPrivileged = authUser && hasEditAccess('payroll', authUser.role);
 
+    const getSundayStr = (mondayStr) => {
+        if (!mondayStr) return "";
+        try {
+            const d = new Date(mondayStr);
+            d.setDate(d.getDate() + 6);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        } catch (e) { return mondayStr; }
+    };
+
+    const getPayrollDateOfMonday = (mondayStr) => {
+        if (!mondayStr) return "";
+        try {
+            const d = new Date(mondayStr);
+            d.setDate(d.getDate() + 11);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        } catch (e) { return ""; }
+    };
+
+    const getWeekId = (dateStr) => {
+        if (!dateStr) return "";
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "";
+        d.setHours(0,0,0,0);
+        d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+        const week1 = new Date(d.getFullYear(), 0, 4);
+        const weekNo = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+        return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    };
+
     useEffect(() => {
         let isMounted = true;
         const fetchData = async (showLoading = false) => {
@@ -176,7 +205,11 @@ export const Payroll = ({ authUser }) => {
         const payload = {
             ...formData, id: modalMode === 'add' ? Date.now() : formData.id,
             levelGaji: liveStats.level, gajiPokok: liveStats.pokok, totalGaji: liveStats.total,
-            status: formData.status || 'Draft'
+            status: formData.status || 'Draft',
+            startWeek: formData.periode,
+            endWeek: getSundayStr(formData.periode),
+            payrollDate: getPayrollDateOfMonday(formData.periode),
+            weekId: getWeekId(formData.periode)
         };
 
         let newData = [...data];
@@ -267,7 +300,7 @@ export const Payroll = ({ authUser }) => {
                 ) : (
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                          {currentData.map(d => {
-                              const isPublished = d.status === 'Published';
+                              const isPublished = d.status === 'Published' || d.status === 'PAID';
                               const totalBonus = (Number(d.komisi)||0) + (Number(d.bonusT0)||0) + (Number(d.bonusT3)||0) + (Number(d.otherBonus)||0);
                               
                               if (!isPublished) {
@@ -277,8 +310,9 @@ export const Payroll = ({ authUser }) => {
                                              <i className="ph-fill ph-hourglass-high text-4xl animate-spin-slow"></i>
                                          </div>
                                          <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-full mb-2 border border-indigo-100">Sedang Dikalkulasi</div>
-                                         <h4 className="font-black text-gray-800 dark:text-gray-200 text-lg mb-2">Periode: {formatToDDMMYYYY(d.periode)}</h4>
-                                         <p className="text-xs text-gray-500 font-medium px-4 leading-relaxed">Slip gaji Anda sedang dalam tahap rekapitulasi dan verifikasi. Harap bersabar menunggu rilis resmi dari Admin.</p>
+                                         <h4 className="font-black text-gray-800 dark:text-gray-200 text-lg mb-1">Week {getWeekId(d.periode)}</h4>
+                                         <div className="text-[11px] text-gray-500 font-bold mb-2">Periode: {formatToDDMMYYYY(d.periode)} - {formatToDDMMYYYY(getSundayStr(d.periode))}</div>
+                                         <p className="text-xs text-gray-500 font-medium px-4 leading-relaxed">Slip gaji Anda sedang dalam tahap rekapitulasi dan verifikasi ({d.status || 'Draft'}). Harap bersabar menunggu rilis resmi dari Admin.</p>
                                       </div>
                                   )
                               }
@@ -290,12 +324,24 @@ export const Payroll = ({ authUser }) => {
                                           <i className="ph-fill ph-seal-check text-white text-xl"></i>
                                       </div>
 
-                                      <div className="text-right mb-6 relative z-10">
-                                          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Periode Pencairan</div>
-                                          <div className="text-sm font-black text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 inline-block px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-700">{formatToDDMMYYYY(d.periode)}</div>
+                                      <div className="text-right mb-6 relative z-10 space-y-1">
+                                          <div className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Week {getWeekId(d.periode)}</div>
+                                          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Periode Kerja</div>
+                                          <div className="text-xs font-bold text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 inline-block px-3 py-1 rounded-lg border border-gray-100 dark:border-gray-700">{formatToDDMMYYYY(d.periode)} - {formatToDDMMYYYY(getSundayStr(d.periode))}</div>
+                                          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tanggal Pencairan</div>
+                                          <div className="text-xs font-black text-emerald-600 dark:text-emerald-400">{formatToDDMMYYYY(getPayrollDateOfMonday(d.periode))}</div>
                                       </div>
 
                                       <div className="text-center mb-8 relative z-10">
+                                          <div className="mb-2">
+                                              <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                                   d.status === 'PAID' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50' :
+                                                   d.status === 'PROCESSING PAYROLL' ? 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50' :
+                                                   'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50'
+                                              }`}>
+                                                  {d.status || 'PAID'}
+                                              </span>
+                                          </div>
                                           <div className="text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest mb-2 flex items-center justify-center"><i className="ph-bold ph-money mr-1.5"></i> Total Take Home Pay</div>
                                           <div className="text-4xl sm:text-5xl font-black bg-clip-text text-transparent bg-gradient-to-br from-emerald-500 to-teal-400 drop-shadow-sm">{formatCurrency(d.totalGaji)}</div>
                                           <div className="mt-3 inline-flex items-center text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-800/50">
@@ -582,7 +628,21 @@ export const Payroll = ({ authUser }) => {
                                                     </div>
                                                     <div>
                                                         <div className="font-black text-sm text-gray-900 dark:text-white flex items-center gap-1.5"><i className={`${uStyle.icon} text-[10px] ${uStyle.text}`}></i> {d.fullName}</div>
-                                                        <div className="text-[10px] text-gray-400 font-mono mt-0.5">{d.uid} | {formatToDDMMYYYY(d.periode)}</div>
+                                                        <div className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {d.uid}</div>
+                                                        <div className="text-[10px] text-indigo-500 font-black mt-0.5">Week ID: {getWeekId(d.periode)}</div>
+                                                        <div className="text-[9px] text-gray-500 font-medium mt-0.5">Periode: {formatToDDMMYYYY(d.periode)} - {formatToDDMMYYYY(getSundayStr(d.periode))}</div>
+                                                        <div className="text-[9px] text-emerald-600 font-bold mt-0.5">Gaji Cair: {formatToDDMMYYYY(getPayrollDateOfMonday(d.periode))}</div>
+                                                        <div className="mt-1">
+                                                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
+                                                                d.status === 'PAID' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50' :
+                                                                d.status === 'PROCESSING PAYROLL' ? 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50' :
+                                                                d.status === 'CLOSED' ? 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700' :
+                                                                d.status === 'ACTIVE' ? 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50' :
+                                                                'bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800/50'
+                                                            }`}>
+                                                                {d.status || 'Draft'}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -755,14 +815,22 @@ export const Payroll = ({ authUser }) => {
                                     </div>
 
                                     {/* STATUS PREVIEW & TOMBOL SIMPAN */}
-                                    <div className="mt-8 pt-5 border-t border-gray-700 flex flex-col gap-3">
-                                        <label className="flex items-center gap-3 bg-gray-800/80 p-3 rounded-xl border border-gray-600/50 cursor-pointer group hover:bg-gray-800 transition-colors">
-                                            <input type="checkbox" className="w-5 h-5 text-emerald-500 rounded bg-gray-700 border-gray-500 focus:ring-emerald-500 focus:ring-offset-gray-800" checked={formData.status === 'Published'} onChange={(e) => setFormData({...formData, status: e.target.checked ? 'Published' : 'Draft'})} />
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-bold text-gray-200 group-hover:text-white transition-colors">Langsung Rilis ke Staff</span>
-                                                <span className="text-[9px] text-gray-400 mt-0.5">Hilangkan centang untuk simpan sbg Draft.</span>
-                                            </div>
-                                        </label>
+                                    <div className="mt-8 pt-5 border-t border-gray-700 flex flex-col gap-3.5">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-gray-400 mb-1.5 uppercase ml-1">Status Periode / Payroll</label>
+                                            <select 
+                                                className="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none shadow-sm"
+                                                value={formData.status || 'Draft'} 
+                                                onChange={e => setFormData({...formData, status: e.target.value})}
+                                            >
+                                                <option value="Draft">Draft (Belum Rilis)</option>
+                                                <option value="ACTIVE">ACTIVE (Periode Berjalan)</option>
+                                                <option value="CLOSED">CLOSED (Periode Selesai)</option>
+                                                <option value="PROCESSING PAYROLL">PROCESSING PAYROLL (Sedang Dihitung)</option>
+                                                <option value="PAID">PAID (Sudah Dibayar)</option>
+                                                <option value="Published">Published (Rilis Tradisional)</option>
+                                            </select>
+                                        </div>
                                         <button type="submit" disabled={!formData.username} className="w-full px-5 py-3.5 bg-emerald-600 text-white font-black rounded-xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-500 transition-colors flex justify-center items-center uppercase tracking-widest text-xs disabled:opacity-50">
                                             <i className="ph-bold ph-floppy-disk mr-2 text-base"></i> Simpan Slip Gaji
                                         </button>

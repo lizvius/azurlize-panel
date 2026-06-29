@@ -59,17 +59,12 @@ export const RecruitmentGoals = ({ authUser }) => {
     const getActiveWeekDates = () => {
         const now = new Date();
         const currentDay = now.getDay(); 
-        const currentHour = now.getHours();
 
         let referenceDate = new Date(now);
         referenceDate.setHours(0, 0, 0, 0);
 
-        if (currentDay === 1 && currentHour < 16) {
-            referenceDate.setDate(referenceDate.getDate() - 7);
-        } else if (currentDay !== 1) {
-            const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-            referenceDate.setDate(referenceDate.getDate() + diffToMonday);
-        }
+        const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+        referenceDate.setDate(referenceDate.getDate() + diffToMonday);
 
         const activeDates = [];
         for (let i = 0; i < 7; i++) {

@@ -6,11 +6,71 @@ export const ExecutiveDashboard = ({authUser}) => {
     const [stats, setStats] = useState({ total: 0, pending: 0, active: 0, failed: 0, recruiters: 0, thisWeek: 0 });
     const [alerts, setAlerts] = useState({ highRisk: 0, mediumRisk: 0 });
     const [isLoading, setIsLoading] = useState(false);
+    const [countdownStr, setCountdownStr] = useState("");
 
     const isPrivileged = authUser && ['Superadmin', 'Admin'].includes(authUser.role);
 
     const getMondayStr = (dateInput) => { if (!dateInput) return ""; const d = new Date(dateInput); if (isNaN(d.getTime())) return ""; const localDay = d.getDay() || 7; const target = new Date(d.getTime()); target.setDate(d.getDate() - localDay + 1); return `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}-${String(target.getDate()).padStart(2, '0')}`; };
     const getOffsetMondayStr = (offsetWeeks = 0) => { const d = new Date(); const day = d.getDay() || 7; d.setHours(0,0,0,0); d.setDate(d.getDate() - day + 1 + (offsetWeeks * 7)); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
+    const getSundayStr = (mondayStr) => {
+        if (!mondayStr) return "";
+        try {
+            const d = new Date(mondayStr);
+            d.setDate(d.getDate() + 6);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        } catch (e) { return mondayStr; }
+    };
+
+    const getPayrollDateOfMonday = (mondayStr) => {
+        if (!mondayStr) return null;
+        try {
+            const d = new Date(mondayStr);
+            d.setDate(d.getDate() + 11);
+            return d;
+        } catch (e) { return null; }
+    };
+
+    const getWeekId = (dateStr) => {
+        if (!dateStr) return "";
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "";
+        d.setHours(0,0,0,0);
+        d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+        const week1 = new Date(d.getFullYear(), 0, 4);
+        const weekNo = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+        return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    };
+
+    const currentMondayStr = getOffsetMondayStr(0);
+    const currentSundayStr = getSundayStr(currentMondayStr);
+    const activePayrollDate = getPayrollDateOfMonday(currentMondayStr);
+
+    useEffect(() => {
+        const updateCountdown = () => {
+            if (!activePayrollDate) return;
+            const now = new Date();
+            const target = new Date(activePayrollDate);
+            target.setHours(0, 0, 0, 0);
+            
+            const diffMs = target.getTime() - now.getTime();
+            if (diffMs <= 0) {
+                setCountdownStr("Hari Pembayaran!");
+                return;
+            }
+            
+            const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+            
+            setCountdownStr(`${days}h ${hours}j ${minutes}m ${seconds}d`);
+        };
+        
+        updateCountdown();
+        const timer = setInterval(updateCountdown, 1000);
+        return () => clearInterval(timer);
+    }, [activePayrollDate]);
 
     useEffect(() => {
         let isMounted = true;
@@ -109,6 +169,45 @@ export const ExecutiveDashboard = ({authUser}) => {
                 </div>
                 <div className="w-full md:w-auto text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center bg-white/80 dark:bg-gray-900/80 px-3 py-2 rounded-lg border border-gray-200/80 dark:border-gray-700/80 shadow-inner">
                     <i className="ph-bold ph-calendar-blank mr-1.5 text-indigo-500"></i> {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+            </div>
+
+            {/* Widget Informasi Periode Rekrutmen & Payroll */}
+            <div className="bg-gradient-to-br from-[#1e1b4b] via-[#111827] to-[#0f172a] rounded-3xl p-5 sm:p-6 border border-indigo-500/30 shadow-xl text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-bl-full blur-2xl pointer-events-none text-right"></div>
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative z-10">
+                    <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 text-indigo-300 font-black text-[10px] uppercase tracking-widest bg-indigo-950/50 px-3 py-1.5 rounded-full border border-indigo-800/50">
+                            <i className="ph-bold ph-calendar text-xs animate-pulse"></i> Periode Rekrutmen Aktif
+                        </div>
+                        <h3 className="text-xl sm:text-2xl font-black text-white">
+                            Week {getWeekId(currentMondayStr)}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-gray-400">
+                            Periode berjalan dari <span className="font-bold text-white">{formatToDDMMYYYY(currentMondayStr)}</span> s/d <span className="font-bold text-white">{formatToDDMMYYYY(currentSundayStr)}</span> (Senin 00:00:00 - Minggu 23:59:59)
+                        </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full lg:w-auto">
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                            <div className="text-[9px] font-black uppercase text-gray-400 tracking-widest mb-1">Status Periode</div>
+                            <span className="px-2.5 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-black uppercase tracking-widest">
+                                ACTIVE
+                            </span>
+                        </div>
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                            <div className="text-[9px] font-black uppercase text-gray-400 tracking-widest mb-1">Tanggal Payroll</div>
+                            <span className="text-sm font-black text-indigo-300">
+                                {activePayrollDate ? formatToDDMMYYYY(activePayrollDate.toISOString().split('T')[0]) : "-"}
+                            </span>
+                        </div>
+                        <div className="bg-white/5 border border-indigo-500/20 rounded-2xl p-3 text-center col-span-2">
+                            <div className="text-[9px] font-black uppercase text-indigo-300 tracking-widest mb-1">Countdown Payroll</div>
+                            <span className="text-sm sm:text-base font-black text-amber-300 font-mono">
+                                {countdownStr || "00h 00j 00m 00d"}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 

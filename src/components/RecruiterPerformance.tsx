@@ -71,7 +71,27 @@ export const RecruiterPerformance = ({ authUser }) => {
         };
     };
 
-    const performanceMap = data.reduce((acc, curr) => {
+    const getMondayStr = (dateInput) => {
+        if (!dateInput) return "";
+        const d = new Date(dateInput);
+        if (isNaN(d.getTime())) return "";
+        const localDay = d.getDay() || 7;
+        const target = new Date(d.getTime());
+        target.setDate(d.getDate() - localDay + 1);
+        return `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}-${String(target.getDate()).padStart(2, '0')}`;
+    };
+
+    const getOffsetMondayStr = (offsetWeeks = 0) => {
+        const d = new Date();
+        const day = d.getDay() || 7;
+        d.setHours(0,0,0,0);
+        d.setDate(d.getDate() - day + 1 + (offsetWeeks * 7));
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
+    const currentWeekMonday = getOffsetMondayStr(0);
+
+    const performanceMap = data.filter(d => d && d.tanggal && getMondayStr(d.tanggal) === currentWeekMonday).reduce((acc, curr) => {
         const rec = curr.recruiter || 'Unknown';
         if (!acc[rec]) acc[rec] = { total: 0, acc: 0 };
         acc[rec].total += 1;

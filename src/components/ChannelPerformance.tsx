@@ -85,8 +85,28 @@ export const ChannelPerformance = ({ authUser }) => {
         };
     };
 
+    const getMondayStr = (dateInput) => {
+        if (!dateInput) return "";
+        const d = new Date(dateInput);
+        if (isNaN(d.getTime())) return "";
+        const localDay = d.getDay() || 7;
+        const target = new Date(d.getTime());
+        target.setDate(d.getDate() - localDay + 1);
+        return `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}-${String(target.getDate()).padStart(2, '0')}`;
+    };
+
+    const getOffsetMondayStr = (offsetWeeks = 0) => {
+        const d = new Date();
+        const day = d.getDay() || 7;
+        d.setHours(0,0,0,0);
+        d.setDate(d.getDate() - day + 1 + (offsetWeeks * 7));
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
     const getLeaderboardData = (channelId) => {
+        const currentWeekMonday = getOffsetMondayStr(0);
         const filteredLeads = data.filter(d => {
+            if (!d || !d.tanggal || getMondayStr(d.tanggal) !== currentWeekMonday) return false;
             const ch = (d.channels || '').toLowerCase().trim();
             if (channelId === 'Instagram') return ch === 'instagram' || ch === 'ig';
             if (channelId === 'TikTok') return ch === 'tiktok' || ch === 'tt';
