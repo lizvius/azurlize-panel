@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Badge, ProgressBar } from './UI';
-import { SCRIPT_URL, formatToDDMMYYYY } from '../utils';
+import { SCRIPT_URL, formatToDDMMYYYY, hasEditAccess } from '../utils';
 
 export const DailyData = ({ authUser }) => {
     // Menghitung indeks hari kemarin (1-7) secara otomatis
@@ -36,7 +36,7 @@ export const DailyData = ({ authUser }) => {
     const initialForm = { id: '', tanggal: getTodaySafe(), recruiter: '', channels: 'Instagram', email: '', wa: '', uid: '', username: '', results: 'Pending', grup: 'T0-SANDI' };
     const [formData, setFormData] = useState(initialForm);
 
-    const isPrivileged = authUser && ['Superadmin', 'Admin'].includes(authUser?.role);
+    const isPrivileged = authUser && hasEditAccess('daily_data', authUser?.role);
 
     // Array Hari dilengkapi Icon Modern
     const daysOfWeek = [
@@ -221,7 +221,13 @@ export const DailyData = ({ authUser }) => {
         }
     };
 
-    const safeDataArray = Array.isArray(data) ? data : [];
+    const safeDataArray = (Array.isArray(data) ? data : []).filter(d => {
+        if (!authUser) return false;
+        if (authUser.role === 'Staff') {
+            return d?.recruiter === authUser.username || d?.recruiter === authUser.name;
+        }
+        return true;
+    });
     const thisWeekDataOnly = safeDataArray.filter(d => d && d?.tanggal && getMondayStr(d?.tanggal) === thisWeekMonday);
 
     const baseDisplayData = safeDataArray.filter(d => {
@@ -432,7 +438,7 @@ export const DailyData = ({ authUser }) => {
                 ) : (
                     <>
                         {/* TAMPILAN MOBILE (Card List Native-Like) */}
-                        <div className="flex flex-col gap-3 md:hidden">
+                        <div className="flex flex-col gap-3 lg:hidden">
                             {paginatedData.length === 0 ? (
                                 <div className="text-center py-10 bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm text-gray-400">
                                     <i className="ph-fill ph-folder-open text-3xl mb-2 text-gray-300 dark:text-gray-600 block"></i>
@@ -476,7 +482,7 @@ export const DailyData = ({ authUser }) => {
                         </div>
 
                         {/* TAMPILAN TABLET/DESKTOP (Table Normal) */}
-                        <div className="hidden md:block bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden">
+                        <div className="hidden lg:block bg-white dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden">
                             <div className="overflow-x-auto custom-scrollbar">
                                 <table className="w-full text-left whitespace-nowrap min-w-[800px]">
                                     <thead className="bg-gray-50 dark:bg-black/20 border-b border-gray-200 dark:border-white/10 text-[10px] font-black text-gray-400 uppercase tracking-widest sticky top-0 z-10">

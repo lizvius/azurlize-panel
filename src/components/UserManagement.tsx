@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Badge, ProgressBar } from './UI';
-import { SCRIPT_URL, formatToDDMMYYYY } from '../utils';
+import { SCRIPT_URL, formatToDDMMYYYY, hasEditAccess } from '../utils';
 
 export const UserManagement = ({ authUser }) => {
     const [users, setUsers] = useState([]);
@@ -22,9 +22,7 @@ export const UserManagement = ({ authUser }) => {
     const itemsPerPage = 10;
 
     const isSuperadmin = authUser && authUser.role === 'Superadmin';
-    const isAdmin = authUser && authUser.role === 'Admin';
-    // Mengecek apakah yang login memiliki akses istimewa (Admin/Superadmin)
-    const isPrivileged = isSuperadmin || isAdmin;
+    const isPrivileged = authUser && hasEditAccess('users', authUser.role);
 
     const fetchUsers = async (showLoading = true) => {
         if (showLoading) setIsLoading(true);
@@ -212,7 +210,7 @@ export const UserManagement = ({ authUser }) => {
         <div className="space-y-3">
             {dataList.length === 0 ? <div className="text-center py-10 text-gray-500 font-medium bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">Belum ada data di kategori ini.</div> : dataList.map((u, i) => {
                 const isPending = u.status === 'Pending'; 
-                const canEdit = isSuperadmin || (isAdmin && (u.role === 'Staff' || isPending) && u.role !== 'Superadmin' && u.role !== 'Admin'); 
+                const canEdit = isSuperadmin || (isPrivileged && (u.role === 'Staff' || isPending) && u.role !== 'Superadmin' && u.role !== 'Admin'); 
                 const canDelete = isSuperadmin && authUser && u.username !== authUser.username;
                 const isExpanded = expandedUser === u.username;
                 const st = getRoleStyles(u.role, isExpanded);

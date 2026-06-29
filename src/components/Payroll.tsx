@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Badge, ProgressBar } from './UI';
-import { SCRIPT_URL, formatToDDMMYYYY } from '../utils';
+import { SCRIPT_URL, formatToDDMMYYYY, hasEditAccess } from '../utils';
 
 export const Payroll = ({ authUser }) => {
     const [data, setData] = useState([]);
@@ -20,7 +20,7 @@ export const Payroll = ({ authUser }) => {
         status: 'Draft'
     });
 
-    const isPrivileged = authUser && ['Superadmin', 'Admin'].includes(authUser.role);
+    const isPrivileged = authUser && hasEditAccess('payroll', authUser.role);
 
     useEffect(() => {
         let isMounted = true;
@@ -457,7 +457,7 @@ export const Payroll = ({ authUser }) => {
                 <div className="bg-white dark:bg-[#1a202c] rounded-3xl shadow-sm border border-gray-200 dark:border-gray-700/60 overflow-hidden">
                     
                     {/* TAMPILAN HP (MOBILE) */}
-                    <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-700/50">
+                    <div className="lg:hidden divide-y divide-gray-100 dark:divide-gray-700/50">
                         {currentData.map(d => {
                             const uStyle = getRoleStyle(d.role);
                             
@@ -517,7 +517,7 @@ export const Payroll = ({ authUser }) => {
                     </div>
 
                     {/* TAMPILAN DESKTOP (TABEL) */}
-                    <div className="hidden md:block overflow-x-auto custom-scrollbar">
+                    <div className="hidden lg:block overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left whitespace-nowrap min-w-[1500px]">
                             <thead className="bg-gray-50/80 dark:bg-gray-900/50 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-200 dark:border-gray-700/50 sticky top-0 z-10 backdrop-blur-md">
                                 <tr>

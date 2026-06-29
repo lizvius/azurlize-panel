@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Badge, ProgressBar } from './UI';
-import { SCRIPT_URL, formatToDDMMYYYY } from '../utils';
+import { SCRIPT_URL, formatToDDMMYYYY, hasEditAccess } from '../utils';
 
 export const DailyStats = ({ authUser }) => {
     // -------------------------------------------------------------
@@ -34,7 +34,7 @@ export const DailyStats = ({ authUser }) => {
         id: '', tanggalKerja: '', tanggalLapor: '', username: '', postingan: '', kunjungan: '', pelamar: '', pengujian: '' 
     });
 
-    const isPrivileged = authUser && ['Superadmin', 'Admin'].includes(authUser.role);
+    const isPrivileged = authUser && hasEditAccess('daily_stats', authUser.role);
 
     const getOffsetMondayStr = (offset) => { 
         const d = new Date(); const day = d.getDay() || 7; d.setHours(0,0,0,0); d.setDate(d.getDate() - day + 1 + (offset * 7)); 
@@ -557,7 +557,7 @@ export const DailyStats = ({ authUser }) => {
                         return (
                             <div>
                                 {/* Desktop View */}
-                                <div className="hidden md:block overflow-x-auto custom-scrollbar">
+                                <div className="hidden lg:block overflow-x-auto custom-scrollbar">
                                     <table className="w-full text-left whitespace-nowrap min-w-[800px]">
                                         <thead className="bg-gray-50/80 dark:bg-gray-900/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-200 dark:border-gray-700/50 sticky top-0 z-10 backdrop-blur-md">
                                             <tr><th className="px-5 py-4">Informasi Staf</th><th className="px-5 py-4 text-center">Postingan</th><th className="px-5 py-4 text-center">Visitor</th><th className="px-5 py-4 text-center">Pelamar</th><th className="px-5 py-4 text-center">Diuji</th><th className="px-5 py-4 text-center">Auto (T0/V0)</th><th className="px-5 py-4 text-center">Total & Status</th><th className="px-5 py-4 text-right">Tindakan</th></tr>
@@ -604,7 +604,7 @@ export const DailyStats = ({ authUser }) => {
                                 </div>
                                 
                                 {/* Mobile View */}
-                                <div className="md:hidden p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/30">
+                                <div className="lg:hidden p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/30">
                                     {isLoading ? <div className="flex justify-center p-6"><i className="ph-bold ph-spinner ph-spin text-3xl text-indigo-500"></i></div> :
                                     inputItems.length === 0 ? <div className="text-center py-10 text-gray-400 font-bold"><i className="ph-fill ph-folder-open text-4xl mb-2 opacity-50 block"></i>Kosong</div> :
                                     (
@@ -665,7 +665,7 @@ export const DailyStats = ({ authUser }) => {
                     {activeTab === 'mingguan' && (
                         <div>
                             {/* Desktop View */}
-                            <div className="hidden md:block overflow-x-auto print:p-0 custom-scrollbar">
+                            <div className="hidden lg:block overflow-x-auto print:p-0 custom-scrollbar">
                                 <h2 className="hidden print:block text-2xl font-black mb-6 text-center border-b pb-4">Rekap Mingguan - Mulai {formatToDDMMYYYY(getOffsetMondayStr(0))}</h2>
                                 <table className="w-full text-left whitespace-nowrap min-w-[1000px]">
                                     <thead className="bg-purple-50/80 dark:bg-purple-900/30 text-[10px] font-black text-purple-800 dark:text-purple-300 uppercase tracking-widest border-b-2 border-purple-200 dark:border-purple-800/50 sticky top-0 z-10 backdrop-blur-md">
@@ -687,13 +687,13 @@ export const DailyStats = ({ authUser }) => {
                                                 <td className="px-5 py-4 text-right font-black border-l border-gray-100 dark:border-gray-700/50">{s.denda > 0 ? <span className="text-rose-600 bg-rose-50 border border-rose-200 dark:bg-rose-900/30 dark:border-rose-800/50 px-2.5 py-1 rounded-md shadow-sm">Rp {(s.denda).toLocaleString('id-ID')}</span> : <span className="text-emerald-500 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-md">Rp 0</span>}</td>
                                                 <td className="px-5 py-4 text-center font-black border-l border-gray-100 dark:border-gray-700/50">{s.dapatBonus ? <span className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 px-2.5 py-1 rounded-md text-[10px] shadow-sm uppercase tracking-widest flex items-center justify-center w-max mx-auto"><i className="ph-fill ph-star mr-1.5"></i> Cair</span> : <span className="text-gray-300 dark:text-gray-600">-</span>}</td>
                                             </tr>
-                                        ))}
+                                         ))}
                                     </tbody>
                                 </table>
                             </div>
                             
                             {/* Mobile View */}
-                            <div className="md:hidden p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/30">
+                            <div className="lg:hidden p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/30">
                                 <h3 className="text-xs text-indigo-600 font-black uppercase tracking-widest text-center mb-2 bg-indigo-50 py-1.5 rounded-lg border border-indigo-100">Minggu Ini</h3>
                                 {isLoading ? <div className="flex justify-center py-10"><i className="ph-bold ph-spinner ph-spin text-3xl text-indigo-500"></i></div> :
                                  displayWeekly.length === 0 ? <div className="text-center py-10 text-gray-400 font-bold">Data kosong.</div> :
@@ -706,7 +706,7 @@ export const DailyStats = ({ authUser }) => {
                     {activeTab === 'arsip' && isPrivileged && (
                         <div>
                             {/* Desktop View */}
-                            <div className="hidden md:block overflow-x-auto print:p-0 custom-scrollbar">
+                            <div className="hidden lg:block overflow-x-auto print:p-0 custom-scrollbar">
                                 <div className="p-6 bg-gradient-to-r from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center">
                                     <h2 className="text-xl sm:text-2xl font-black text-gray-800 dark:text-white mb-2 flex items-center"><i className="ph-fill ph-archive-box mr-3 text-indigo-500"></i> Data Historis Mingguan</h2>
                                     <h3 className="text-[10px] sm:text-xs text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-widest bg-indigo-50 dark:bg-indigo-900/30 px-4 py-1.5 rounded-full border border-indigo-100 dark:border-indigo-800/50">Periode: {formatToDDMMYYYY(getOffsetMondayStr(arsipOffset))} s/d {formatToDDMMYYYY(new Date(new Date(getOffsetMondayStr(arsipOffset)).getTime() + 6*24*60*60*1000).toISOString())}</h3>
@@ -729,13 +729,13 @@ export const DailyStats = ({ authUser }) => {
                                                 <td className="px-5 py-4 text-right font-black border-l border-gray-100 dark:border-gray-700/50">{s.denda > 0 ? <span className="text-rose-600 bg-rose-50 border border-rose-200 dark:bg-rose-900/30 dark:border-rose-800/50 px-2.5 py-1 rounded-md shadow-sm">Rp {(s.denda).toLocaleString('id-ID')}</span> : <span className="text-emerald-500 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-md">Rp 0</span>}</td>
                                                 <td className="px-5 py-4 text-center font-black border-l border-gray-100 dark:border-gray-700/50">{s.dapatBonus ? <span className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 px-2.5 py-1 rounded-md text-[10px] shadow-sm uppercase tracking-widest flex items-center justify-center w-max mx-auto"><i className="ph-fill ph-star mr-1.5"></i> Cair</span> : <span className="text-gray-300 dark:text-gray-600">-</span>}</td>
                                             </tr>
-                                        ))}
+                                         ))}
                                     </tbody>
                                 </table>
                             </div>
                             
                             {/* Mobile View */}
-                            <div className="md:hidden p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/30">
+                            <div className="lg:hidden p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/30">
                                 <h3 className="text-[10px] text-gray-500 font-black uppercase tracking-widest text-center mb-2">{formatToDDMMYYYY(getOffsetMondayStr(arsipOffset))} - {formatToDDMMYYYY(new Date(new Date(getOffsetMondayStr(arsipOffset)).getTime() + 6*24*60*60*1000).toISOString())}</h3>
                                 {isLoading ? <div className="flex justify-center py-10"><i className="ph-bold ph-spinner ph-spin text-3xl text-indigo-500"></i></div> :
                                  arsipSummary.length === 0 ? <div className="text-center py-10 text-gray-400 font-bold">Data historis kosong.</div> :
@@ -747,7 +747,7 @@ export const DailyStats = ({ authUser }) => {
                     {/* TAB: RIWAYAT SEMUA LAPORAN */}
                     {activeTab === 'riwayat' && (
                         <div>
-                            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+                            <div className="hidden lg:block overflow-x-auto custom-scrollbar">
                                 <table className="w-full text-left whitespace-nowrap min-w-[800px]">
                                     <thead className="bg-gray-50/80 dark:bg-gray-900/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-200 dark:border-gray-700/50 sticky top-0 z-10 backdrop-blur-md">
                                         <tr><th className="px-5 py-4">Informasi Laporan</th><th className="px-5 py-4 text-center">Kerja vs Lapor</th><th className="px-5 py-4 text-center">PST</th><th className="px-5 py-4 text-center">KNJ</th><th className="px-5 py-4 text-center">PLM</th><th className="px-5 py-4 text-center">UJI</th><th className="px-5 py-4 text-center">Total & Status</th></tr>
@@ -783,7 +783,7 @@ export const DailyStats = ({ authUser }) => {
                             </div>
                             
                             {/* Mobile View */}
-                            <div className="md:hidden p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/30">
+                            <div className="lg:hidden p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/30">
                                 {perfData.filter(p => p.tanggalKerja.startsWith(riwayatBulan) && (riwayatUsername ? p.username === riwayatUsername : true) && (!isPrivileged ? p.username === authUser.username : true)).length === 0 ? <div className="text-center py-10 text-gray-400 font-bold">Kosong</div> : 
                                 perfData.filter(p => p.tanggalKerja.startsWith(riwayatBulan) && (riwayatUsername ? p.username === riwayatUsername : true) && (!isPrivileged ? p.username === authUser.username : true)).sort((a,b) => new Date(b.tanggalKerja).getTime() - new Date(a.tanggalKerja).getTime()).map((p, i) => {
                                     const auto = computeT0V0(p.username, p.tanggalKerja);

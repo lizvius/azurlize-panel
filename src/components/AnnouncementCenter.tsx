@@ -445,10 +445,10 @@ export const AnnouncementCenter = ({authUser}) => {
     const activeChannelInfo = ANNOUNCEMENT_CHANNELS.find(c => c.id === activeChannel);
 
     return (
-        <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)] flex flex-col md:flex-row bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-[24px] shadow-sm border border-gray-200/80 dark:border-gray-800/80 overflow-hidden relative animate-in fade-in duration-500">
+        <div className="h-[calc(100vh-8rem)] lg:h-[calc(100vh-6rem)] flex flex-col lg:flex-row bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-[24px] shadow-sm border border-gray-200/80 dark:border-gray-800/80 overflow-hidden relative animate-in fade-in duration-500">
             
             {/* MOBILE: Horizontal Scroll Tabs (Pill Menu) */}
-            <div className="md:hidden flex overflow-x-auto hide-scrollbar bg-gray-50/90 dark:bg-gray-900/90 border-b border-gray-200/80 dark:border-gray-800/80 p-2.5 gap-2 shrink-0 snap-x z-20">
+            <div className="lg:hidden flex overflow-x-auto hide-scrollbar bg-gray-50/90 dark:bg-gray-900/90 border-b border-gray-200/80 dark:border-gray-800/80 p-2.5 gap-2 shrink-0 snap-x z-20">
                 {ANNOUNCEMENT_CHANNELS.map(c => {
                     const unreadCount = posts.filter(p => p.channelId === c.id && !readPosts.includes(p.id)).length; 
                     const isActive = activeChannel === c.id;
@@ -462,7 +462,7 @@ export const AnnouncementCenter = ({authUser}) => {
             </div>
 
             {/* TABLET & LAPTOP: Vertical Sidebar */}
-            <div className="hidden md:flex w-64 lg:w-72 h-full bg-gray-50/90 dark:bg-[#111827]/90 border-r border-gray-200/80 dark:border-gray-800/80 flex-col shrink-0 z-20">
+            <div className="hidden lg:flex w-64 lg:w-72 h-full bg-gray-50/90 dark:bg-[#111827]/90 border-r border-gray-200/80 dark:border-gray-800/80 flex-col shrink-0 z-20">
                 <div className="h-16 px-6 border-b border-gray-200/80 dark:border-gray-800/80 flex items-center bg-white/50 dark:bg-gray-900/50 shrink-0">
                     <h2 className="font-black text-xs uppercase tracking-widest text-gray-500 flex items-center">
                         <i className="ph-bold ph-hash mr-2 text-lg"></i> Channels

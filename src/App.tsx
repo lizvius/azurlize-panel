@@ -12,6 +12,10 @@ import { Payroll } from './components/Payroll';
 import { UserManagement } from './components/UserManagement';
 import { SystemSettings } from './components/SystemSettings';
 import { InstallPWA } from './components/InstallPWA';
+import { BannerGenerator } from './components/BannerGenerator';
+import { LandingPage } from './components/LandingPage';
+import { SuperadminTools } from './components/SuperadminTools';
+import { getSavedPermissions } from './utils';
 
 export default function App() {
     const [authUser, setAuthUser] = useState<any>(() => {
@@ -22,15 +26,24 @@ export default function App() {
             return null;
         }
     });
-    const [authView, setAuthView] = useState('login');
+    const [authView, setAuthView] = useState('landing');
     const [activeTab, setActiveTab] = useState('dashboard');
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [isDark, setIsDark] = useState(() => localStorage.getItem('recruitOps_theme') === 'dark');
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
     const [isCheckingSession, setIsCheckingSession] = useState(true);
     const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
     const [lastSynced, setLastSynced] = useState<Date>(new Date());
     const [isSyncingGlobal, setIsSyncingGlobal] = useState(false);
+    const [permissions, setPermissions] = useState(() => getSavedPermissions());
+
+    useEffect(() => {
+        const handlePermsUpdated = () => {
+            setPermissions(getSavedPermissions());
+        };
+        window.addEventListener('permissionsUpdated', handlePermsUpdated);
+        return () => window.removeEventListener('permissionsUpdated', handlePermsUpdated);
+    }, []);
 
     const triggerGlobalSync = () => {
         setIsSyncingGlobal(true);
@@ -67,7 +80,7 @@ export default function App() {
     }, []);
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
         window.addEventListener('resize', handleResize);
         setTimeout(() => setIsCheckingSession(false), 300);
         return () => window.removeEventListener('resize', handleResize);
@@ -160,14 +173,56 @@ export default function App() {
 
     if (isCheckingSession) return (<div className={`h-dvh flex items-center justify-center ${isDark ? 'dark bg-gray-900' : 'bg-[#F8FAFC]'}`}><div className="flex flex-col items-center"><i className="ph-bold ph-spinner ph-spin text-4xl text-indigo-600 dark:text-indigo-400 mb-4"></i><span className="text-gray-500 dark:text-gray-400 font-bold text-sm">Memuat ruang kerja...</span></div></div>);
     
-    if (!authUser) return (<div className={isDark ? 'dark' : ''}>{authView === 'login' ? <Login onLogin={login} onNavigateRegister={()=>setAuthView('register')} /> : <Register onRegister={login} onNavigateLogin={()=>setAuthView('login')} />}<button onClick={()=>setIsDark(!isDark)} className="fixed top-4 right-4 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg text-gray-500 z-50 transition-transform active:scale-95"><i className={`ph-bold ${isDark?'ph-sun':'ph-moon'} text-xl`}></i></button></div>);
+    if (!authUser) return (
+        <div className={isDark ? 'dark' : ''}>
+            {authView === 'landing' ? (
+                <LandingPage onOpenAuth={(view: any) => setAuthView(view)} isDark={isDark} />
+            ) : authView === 'login' ? (
+                <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F19] flex flex-col items-center justify-center p-4 relative">
+                    <button onClick={() => setAuthView('landing')} className="absolute top-4 left-4 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm z-50">
+                        <i className="ph-bold ph-arrow-left"></i> Kembali ke Landing Page
+                    </button>
+                    <Login onLogin={login} onNavigateRegister={()=>setAuthView('register')} />
+                </div>
+            ) : (
+                <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F19] flex flex-col items-center justify-center p-4 relative">
+                    <button onClick={() => setAuthView('login')} className="absolute top-4 left-4 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm z-50">
+                        <i className="ph-bold ph-arrow-left"></i> Kembali ke Login
+                    </button>
+                    <Register onRegister={login} onNavigateLogin={()=>setAuthView('login')} />
+                </div>
+            )}
+            <button onClick={()=>setIsDark(!isDark)} className="fixed top-4 right-4 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg text-gray-500 z-50 transition-transform active:scale-95">
+                <i className={`ph-bold ${isDark?'ph-sun':'ph-moon'} text-xl`}></i>
+            </button>
+        </div>
+    );
 
     const NAVIGATION = [
-        { s: 'Overview', allowed: ['Superadmin', 'Admin', 'Staff'], items: [{ id: 'dashboard', l: 'Dashboard', i: 'ph-squares-four', roles: ['Superadmin', 'Admin', 'Staff'] }, { id: 'announcement', l: 'Pemberitahuan Dan Chat', i: 'ph-megaphone', roles: ['Superadmin', 'Admin', 'Staff'], badge: unreadAnnouncements }, { id: 'follow_up', l: 'Follow Up', i: 'ph-bell-ringing', roles: ['Superadmin', 'Admin', 'Staff'] }] },
-        { s: 'Performance', allowed: ['Superadmin', 'Admin', 'Staff'], items: [{ id: 'performance', l: 'Recruiter Performance', i: 'ph-medal', roles: ['Superadmin', 'Admin', 'Staff'] }, { id: 'goals', l: 'Recruitment Goals', i: 'ph-target', roles: ['Superadmin', 'Admin', 'Staff'] }, { id: 'channels', l: 'Channel Performance', i: 'ph-megaphone', roles: ['Superadmin', 'Admin', 'Staff'] }] },
-        { s: 'Management', allowed: ['Superadmin', 'Admin', 'Staff'], items: [{ id: 'daily_data', l: 'Daily Data', i: 'ph-address-book', roles: ['Superadmin', 'Admin', 'Staff'] }, { id: 'daily_stats', l: 'Daily Stats', i: 'ph-chart-bar', roles: ['Superadmin', 'Admin', 'Staff'] }, { id: 'payroll', l: 'Payroll', i: 'ph-currency-circle-dollar', roles: ['Superadmin', 'Admin', 'Staff'] }, { id: 'users', l: 'User Accounts', i: 'ph-user-gear', roles: ['Superadmin', 'Admin', 'Staff'] }] },
-        { s: 'System', allowed: ['Superadmin'], items: [{ id: 'settings', l: 'Settings', i: 'ph-gear', roles: ['Superadmin'] }] }
-    ].map(sec => ({ ...sec, items: sec.items.filter(item => item.roles.includes(authUser.role)) })).filter(sec => sec.items.length > 0 && sec.allowed.includes(authUser.role));
+        { s: 'Overview', allowed: ['Superadmin', 'Admin', 'Staff'], items: [
+            { id: 'dashboard', l: 'Dashboard', i: 'ph-squares-four', roles: permissions.dashboard?.view || ['Superadmin', 'Admin', 'Staff'] }, 
+            { id: 'announcement', l: 'Pemberitahuan Dan Chat', i: 'ph-megaphone', roles: permissions.announcement?.view || ['Superadmin', 'Admin', 'Staff'], badge: unreadAnnouncements }, 
+            { id: 'follow_up', l: 'Follow Up', i: 'ph-bell-ringing', roles: permissions.follow_up?.view || ['Superadmin', 'Admin', 'Staff'] }
+        ] },
+        { s: 'Performance', allowed: ['Superadmin', 'Admin', 'Staff'], items: [
+            { id: 'performance', l: 'Recruiter Performance', i: 'ph-medal', roles: permissions.performance?.view || ['Superadmin', 'Admin', 'Staff'] }, 
+            { id: 'goals', l: 'Recruitment Goals', i: 'ph-target', roles: permissions.goals?.view || ['Superadmin', 'Admin', 'Staff'] }, 
+            { id: 'channels', l: 'Channel Performance', i: 'ph-megaphone', roles: permissions.channels?.view || ['Superadmin', 'Admin', 'Staff'] }
+        ] },
+        { s: 'Management', allowed: ['Superadmin', 'Admin', 'Staff'], items: [
+            { id: 'daily_data', l: 'Daily Data', i: 'ph-address-book', roles: permissions.daily_data?.view || ['Superadmin', 'Admin', 'Staff'] }, 
+            { id: 'daily_stats', l: 'Daily Stats', i: 'ph-chart-bar', roles: permissions.daily_stats?.view || ['Superadmin', 'Admin', 'Staff'] }, 
+            { id: 'payroll', l: 'Payroll', i: 'ph-currency-circle-dollar', roles: permissions.payroll?.view || ['Superadmin', 'Admin', 'Staff'] }, 
+            { id: 'users', l: 'User Accounts', i: 'ph-user-gear', roles: permissions.users?.view || ['Superadmin', 'Admin', 'Staff'] }
+        ] },
+        { s: 'System', allowed: ['Superadmin'], items: [
+            { id: 'settings', l: 'Settings', i: 'ph-gear', roles: permissions.settings?.view || ['Superadmin'] },
+            { id: 'superadmin_tools', l: 'Superadmin Tools', i: 'ph-shield-check', roles: ['Superadmin'] }
+        ] }
+    ].map(sec => ({
+        ...sec,
+        items: sec.items.filter(item => item.roles.map((r: string) => r.toLowerCase()).includes(authUser.role.toLowerCase()))
+    })).filter(sec => sec.items.length > 0 && sec.allowed.map((r: string) => r.toLowerCase()).includes(authUser.role.toLowerCase()));
 
     let pageTitle = 'Dashboard'; NAVIGATION.forEach(sec => sec.items.forEach(item => { if(item.id === activeTab) pageTitle = item.l; }));
 
@@ -184,6 +239,7 @@ export default function App() {
             case 'payroll': return <Payroll authUser={authUser} />;
             case 'users': return <UserManagement authUser={authUser} />;
             case 'settings': return <SystemSettings />;
+            case 'superadmin_tools': return <SuperadminTools authUser={authUser} />;
             default: return <ExecutiveDashboard authUser={authUser} />;
         }
     };
@@ -200,21 +256,21 @@ export default function App() {
     const roleStyle = getRoleStyle(authUser.role);
 
     return (
-        <div className={`${isDark ? 'dark' : ''} h-dvh overflow-hidden flex flex-col bg-[#F8FAFC] dark:bg-[#0B0F19] transition-colors selection:bg-indigo-500/30`}>
+        <div className={`${isDark ? 'dark' : ''} h-dvh overflow-hidden flex flex-col bg-[#F8FAFC] dark:bg-[#0B0F19] transition-colors selection:bg-indigo-500/30 w-full max-w-full relative overflow-x-hidden`}>
             {/* Background Ambient Orbs */}
             <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none"></div>
             <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
             <InstallPWA />
-            <div className="flex flex-1 overflow-hidden relative">
+            <div className="flex flex-1 overflow-hidden relative w-full max-w-full overflow-x-hidden">
                 
                 {/* Mobile Sidebar Overlay */}
                 {isMobile && isSidebarOpen && (
                     <div className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-40 transition-opacity animate-in fade-in duration-300" onClick={() => setSidebarOpen(false)} />
                 )}
             
-                {/* MODERN SIDEBAR (Desktop & Tablet) */}
-                <aside className={`fixed md:static inset-y-0 left-0 z-50 w-72 bg-white/80 dark:bg-[#111827]/80 backdrop-blur-2xl border-r border-gray-200/50 dark:border-gray-800/50 transform transition-transform duration-500 ease-out flex flex-col shadow-[20px_0_40px_rgba(0,0,0,0.05)] md:shadow-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+                {/* MODERN SIDEBAR (Desktop & Laptop) */}
+                <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white/80 dark:bg-[#111827]/80 backdrop-blur-2xl border-r border-gray-200/50 dark:border-gray-800/50 transform transition-transform duration-500 ease-out flex flex-col shadow-[20px_0_40px_rgba(0,0,0,0.05)] lg:shadow-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
                     
                     {/* Header Logo Sidebar */}
                     <div className="h-20 flex items-center px-6 border-b border-gray-200/50 dark:border-gray-800/50 shrink-0">
@@ -236,7 +292,7 @@ export default function App() {
                     </div>
                     
                     {/* Menu Items */}
-                    <div className="flex-1 overflow-y-auto py-6 px-4 custom-scrollbar pb-24 md:pb-6">
+                    <div className="flex-1 overflow-y-auto py-6 px-4 custom-scrollbar pb-24 lg:pb-6">
                         {NAVIGATION.map((group, idx) => (
                             <div key={idx} className="mb-8">
                                 <h4 className="px-2 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-3">
@@ -299,42 +355,42 @@ export default function App() {
                     </div>
                 </aside>
 
-                <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative pb-24 md:pb-0">
+                <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative pb-24 lg:pb-0">
                     {/* Modern Top Header */}
-                    <header className="h-20 bg-white/70 dark:bg-[#0B0F19]/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 flex items-center justify-between px-6 lg:px-10 z-10 shrink-0 sticky top-0">
-                        <div className="flex items-center">
+                    <header className="h-20 bg-white/70 dark:bg-[#0B0F19]/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 flex items-center justify-between px-4 sm:px-6 lg:px-10 z-10 shrink-0 sticky top-0">
+                        <div className="flex items-center min-w-0 mr-2">
                             {isMobile && (
-                                <button onClick={()=>setSidebarOpen(true)} className="mr-4 text-gray-500 hover:text-indigo-600 bg-gray-100 dark:bg-gray-800 w-10 h-10 rounded-xl flex items-center justify-center transition-colors shadow-sm">
+                                <button onClick={()=>setSidebarOpen(true)} className="mr-3 text-gray-500 hover:text-indigo-600 bg-gray-100 dark:bg-gray-800 w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm shrink-0">
                                     <i className="ph-bold ph-list text-xl"></i>
                                 </button>
                             )}
-                            <div>
-                                <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">{pageTitle}</h1>
+                            <div className="min-w-0">
+                                <h1 className="text-base sm:text-xl md:text-2xl font-black text-gray-900 dark:text-white tracking-tight truncate">{pageTitle}</h1>
                                 <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-widest hidden sm:block mt-0.5">AzurLize Management System</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
                             {/* Visual Sync Status (hidden on very small phones, beautiful on tablet & desktop) */}
-                            <div className="flex flex-col items-end mr-1 text-[10px] font-bold text-gray-400 dark:text-gray-500">
-                                <span className="text-[9px] uppercase tracking-wider text-gray-400 dark:text-gray-500 select-none">Auto Sync</span>
-                                <span className="text-emerald-500 dark:text-emerald-400 flex items-center gap-1">
+                            <div className="flex flex-col items-end mr-1 font-bold text-gray-400 dark:text-gray-500 leading-tight">
+                                <span className="text-[8px] uppercase tracking-wider text-gray-400 dark:text-gray-500 select-none hidden md:inline">Auto Sync</span>
+                                <span className="text-emerald-500 dark:text-emerald-400 flex items-center gap-1 text-[10px] sm:text-xs">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    {lastSynced.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    {lastSynced.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                             </div>
 
                             <button onClick={triggerGlobalSync} disabled={isSyncingGlobal} 
-                                className="w-11 h-11 flex items-center justify-center text-gray-500 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/80 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-500/50 rounded-2xl transition-all shadow-sm group disabled:opacity-75">
-                                <i className={`ph-bold ph-arrows-clockwise text-xl ${isSyncingGlobal ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 duration-500'}`}></i>
+                                className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center text-gray-500 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/80 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-500/50 rounded-xl sm:rounded-2xl transition-all shadow-sm group disabled:opacity-75 shrink-0">
+                                <i className={`ph-bold ph-arrows-clockwise text-lg sm:text-xl ${isSyncingGlobal ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 duration-500'}`}></i>
                             </button>
 
-                            <button onClick={()=>setIsDark(!isDark)} className="w-11 h-11 flex items-center justify-center text-gray-500 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/80 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-500/50 rounded-2xl transition-all shadow-sm group">
-                                <i className={`ph-fill ${isDark ? 'ph-moon text-indigo-400' : 'ph-sun text-amber-500'} text-xl group-hover:rotate-12 transition-transform`}></i>
+                            <button onClick={()=>setIsDark(!isDark)} className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center text-gray-500 bg-white dark:bg-gray-800 border border-gray-200/80 dark:border-gray-700/80 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-500/50 rounded-xl sm:rounded-2xl transition-all shadow-sm group shrink-0">
+                                <i className={`ph-fill ${isDark ? 'ph-moon text-indigo-400' : 'ph-sun text-amber-500'} text-lg sm:text-xl group-hover:rotate-12 transition-transform`}></i>
                             </button>
                         </div>
                     </header>
                     
-                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 custom-scrollbar">
                         <div className="max-w-[1400px] mx-auto pb-6 print:pb-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             {renderPageContent()}
                         </div>
@@ -342,9 +398,9 @@ export default function App() {
                 </main>
             </div>
 
-            {/* FLOATING BOTTOM NAV (Modern iOS Style for Mobile) */}
+            {/* FLOATING BOTTOM NAV (Modern iOS Style for Mobile & Tablet) */}
             {isMobile && (
-                <div className="fixed bottom-5 left-4 right-4 z-40 animate-in slide-in-from-bottom-6 duration-500">
+                <div className="fixed bottom-5 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xl z-40 animate-in slide-in-from-bottom-6 duration-500">
                     <nav className="bg-white/95 dark:bg-[#1a202c]/95 backdrop-blur-2xl border border-gray-200/50 dark:border-gray-700/50 rounded-[28px] flex justify-around items-center h-[72px] px-2 shadow-[0_20px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
                         {bottomNavItems.map((item) => {
                             const isActive = activeTab === item.id;

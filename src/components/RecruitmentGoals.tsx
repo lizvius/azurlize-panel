@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Badge, ProgressBar } from './UI';
-import { SCRIPT_URL, formatToDDMMYYYY } from '../utils';
+import { SCRIPT_URL, formatToDDMMYYYY, hasEditAccess } from '../utils';
 
 export const RecruitmentGoals = ({ authUser }) => {
     const [data, setData] = useState([]);
     const [users, setUsers] = useState([]); 
     const [isLoading, setIsLoading] = useState(true);
     
-    const isPrivileged = authUser && ['Superadmin', 'Admin'].includes(authUser.role);
+    const isPrivileged = authUser && hasEditAccess('goals', authUser.role);
 
     useEffect(() => {
         let isMounted = true;

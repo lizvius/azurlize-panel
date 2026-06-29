@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Badge, ProgressBar } from './UI';
-import { SCRIPT_URL, formatToDDMMYYYY } from '../utils';
+import { SCRIPT_URL, formatToDDMMYYYY, hasEditAccess } from '../utils';
 
 export const ChannelPerformance = ({ authUser }) => {
     const [data, setData] = useState([]);
@@ -8,7 +8,7 @@ export const ChannelPerformance = ({ authUser }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('Instagram');
 
-    const isPrivileged = authUser && ['Superadmin', 'Admin'].includes(authUser.role);
+    const isPrivileged = authUser && hasEditAccess('channels', authUser.role);
 
     useEffect(() => {
         let isMounted = true;
