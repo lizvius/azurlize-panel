@@ -176,25 +176,28 @@ export default function App() {
     if (!authUser) return (
         <div className={isDark ? 'dark' : ''}>
             {authView === 'landing' ? (
-                <LandingPage onOpenAuth={(view: any) => setAuthView(view)} isDark={isDark} />
+                <LandingPage 
+                    onOpenAuth={(view: any) => setAuthView(view)} 
+                    isDark={isDark} 
+                    onToggleDark={() => setIsDark(!isDark)} 
+                />
             ) : authView === 'login' ? (
-                <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F19] flex flex-col items-center justify-center p-4 relative">
-                    <button onClick={() => setAuthView('landing')} className="absolute top-4 left-4 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm z-50">
-                        <i className="ph-bold ph-arrow-left"></i> Kembali ke Landing Page
-                    </button>
-                    <Login onLogin={login} onNavigateRegister={()=>setAuthView('register')} />
-                </div>
+                <Login 
+                    onLogin={login} 
+                    onNavigateRegister={() => setAuthView('register')} 
+                    onBack={() => setAuthView('landing')} 
+                    isDark={isDark} 
+                    onToggleDark={() => setIsDark(!isDark)} 
+                />
             ) : (
-                <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F19] flex flex-col items-center justify-center p-4 relative">
-                    <button onClick={() => setAuthView('login')} className="absolute top-4 left-4 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm z-50">
-                        <i className="ph-bold ph-arrow-left"></i> Kembali ke Login
-                    </button>
-                    <Register onRegister={login} onNavigateLogin={()=>setAuthView('login')} />
-                </div>
+                <Register 
+                    onRegister={login} 
+                    onNavigateLogin={() => setAuthView('login')} 
+                    onBack={() => setAuthView('login')} 
+                    isDark={isDark} 
+                    onToggleDark={() => setIsDark(!isDark)} 
+                />
             )}
-            <button onClick={()=>setIsDark(!isDark)} className="fixed top-4 right-4 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg text-gray-500 z-50 transition-transform active:scale-95">
-                <i className={`ph-bold ${isDark?'ph-sun':'ph-moon'} text-xl`}></i>
-            </button>
         </div>
     );
 
