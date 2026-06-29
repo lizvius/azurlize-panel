@@ -831,7 +831,7 @@ export const UserManagement = ({ authUser }: { authUser: any }) => {
                                         )}
                                     </h2>
                                     <span className="text-xs font-mono font-bold text-gray-400 mt-0.5 block">
-                                        @{selectedUserDetail.username}
+                                        {selectedUserDetail.username}
                                     </span>
                                     <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
                                         <span className="text-[10px] font-black px-2.5 py-0.5 rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 border border-indigo-200/30">
